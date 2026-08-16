@@ -58,7 +58,7 @@ export const securityHeadersMiddleware: MiddlewareHandler = async (c, next) => {
   const CSP = [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com ${GEETEST_DOMAINS}`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://*.geetest.com https://*.geevisit.com https://*.gsensebot.com",
     `img-src 'self' data: blob: ${GEETEST_DOMAINS}`,
     "font-src 'self' data:",
     `media-src 'self' blob: ${GEETEST_DOMAINS}`,
