@@ -32,8 +32,6 @@ interface __BaseEnv_Env {
 	COMMENT_MODERATION_WORKFLOW: Workflow<Parameters<import("./src/server").CommentModerationWorkflow['run']>[0]['payload']>;
 	SCHEDULED_PUBLISH_WORKFLOW: Workflow<Parameters<import("./src/server").ScheduledPublishWorkflow['run']>[0]['payload']>;
 	EXPORT_WORKFLOW: Workflow<Parameters<import("./src/server").ExportWorkflow['run']>[0]['payload']>;
-	BACKUP_WORKFLOW: Workflow<Parameters<import("./src/server").BackupWorkflow['run']>[0]['payload']>;
-	RESTORE_WORKFLOW: Workflow<Parameters<import("./src/server").RestoreWorkflow['run']>[0]['payload']>;
 		IMPORT_WORKFLOW: Workflow<Parameters<import("./src/server").ImportWorkflow['run']>[0]['payload']>;
 }
 declare namespace Cloudflare {
@@ -69,9 +67,7 @@ declare namespace Cloudflare {
 		COMMENT_MODERATION_WORKFLOW: Workflow<Parameters<import("./src/server").CommentModerationWorkflow['run']>[0]['payload']>;
 		SCHEDULED_PUBLISH_WORKFLOW: Workflow<Parameters<import("./src/server").ScheduledPublishWorkflow['run']>[0]['payload']>;
 		EXPORT_WORKFLOW: Workflow<Parameters<import("./src/server").ExportWorkflow['run']>[0]['payload']>;
-		BACKUP_WORKFLOW: Workflow<Parameters<import("./src/server").BackupWorkflow['run']>[0]['payload']>;
-	RESTORE_WORKFLOW: Workflow<Parameters<import("./src/server").RestoreWorkflow['run']>[0]['payload']>;
-		IMPORT_WORKFLOW: Workflow<Parameters<import("./src/server").ImportWorkflow['run']>[0]['payload']>;
+			IMPORT_WORKFLOW: Workflow<Parameters<import("./src/server").ImportWorkflow['run']>[0]['payload']>;
 	}
 	interface Env extends __BaseEnv_Env {}
 }

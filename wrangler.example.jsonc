@@ -84,16 +84,6 @@
       "binding": "IMPORT_WORKFLOW",
       "class_name": "ImportWorkflow"
     },
-    {
-      "name": "backup-workflow",
-      "binding": "BACKUP_WORKFLOW",
-      "class_name": "BackupWorkflow"
-    },
-    {
-      "name": "restore-workflow",
-      "binding": "RESTORE_WORKFLOW",
-      "class_name": "RestoreWorkflow"
-    }
   ],
   "durable_objects": {
     "bindings": [
@@ -195,16 +185,6 @@
           "binding": "IMPORT_WORKFLOW",
           "class_name": "ImportWorkflow"
         },
-        {
-          "name": "backup-workflow",
-          "binding": "BACKUP_WORKFLOW",
-          "class_name": "BackupWorkflow"
-        },
-        {
-          "name": "restore-workflow",
-          "binding": "RESTORE_WORKFLOW",
-          "class_name": "RestoreWorkflow"
-        }
       ],
       "queues": {
         "producers": [{ "binding": "QUEUE", "queue": "blog-queue" }]
