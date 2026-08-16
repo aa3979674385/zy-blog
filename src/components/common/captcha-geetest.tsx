@@ -153,7 +153,13 @@ export function GeetestWidget({
     };
   }, [captchaId, onVerify, onError, onExpire, handleRef]);
 
-  // float 弹窗模式：渲染一个隐藏锚点容器（极验浮层挂载点），
-  // 页面不可见，验证码仅在 showCaptcha() 弹出时出现
-  return <div id={anchorId} style={{ display: "none" }} />;
+  // float 弹窗模式：渲染一个"移出屏幕"的锚点容器（极验浮层挂载点）。
+  // 不能用 display:none（会把弹出后的浮层一并隐藏），
+  // 而是绝对定位移出可视区：页面不可见，showCaptcha() 弹出浮层时（浮层 fixed 定位到视口）可见。
+  return (
+    <div
+      id={anchorId}
+      style={{ position: "fixed", top: "-9999px", left: "-9999px" }}
+    />
+  );
 }
