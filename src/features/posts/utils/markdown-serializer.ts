@@ -1,5 +1,4 @@
 import type { JSONContent } from "@tiptap/react";
-import { extractImageKey } from "@/features/media/utils/media.utils";
 
 /**
  * JSONContent → Markdown 转换器
@@ -247,19 +246,4 @@ function serializeTable(
   }
 
   return lines.join("\n");
-}
-
-/**
- * 将图片 src 重写为导出 ZIP 中的相对路径
- * /images/uuid.jpg?quality=80 → ./images/uuid.jpg
- */
-export function makeExportImageRewriter(): (src: string) => string {
-  return (src: string) => {
-    const key = extractImageKey(src);
-    if (key) {
-      return `./images/${key}`;
-    }
-    // 非本站图片（外链），保留原始 URL
-    return src;
-  };
 }

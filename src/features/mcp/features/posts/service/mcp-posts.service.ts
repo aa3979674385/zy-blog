@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
-import { markdownToJsonContent } from "@/features/import-export/utils/markdown-parser";
-import { jsonContentToMarkdown } from "@/features/import-export/utils/markdown-serializer";
+import { markdownToJsonContent } from "@/features/posts/utils/markdown-parser";
+import { jsonContentToMarkdown } from "@/features/posts/utils/markdown-serializer";
 import type { UpdatePostInput } from "@/features/posts/schema/posts.schema";
 import { serializeMcpDate } from "../../../service/mcp-serialize";
 

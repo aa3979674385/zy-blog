@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import { diffLines, diffWords } from "diff";
-import { jsonContentToMarkdown } from "@/features/import-export/utils/markdown-serializer";
+import { jsonContentToMarkdown } from "@/features/posts/utils/markdown-serializer";
 import type { PostRevisionSnapshot } from "@/features/posts/schema/post-revisions.schema";
 
 export interface DiffToken {

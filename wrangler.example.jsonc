@@ -73,17 +73,7 @@
       "name": "scheduled-publish-workflow",
       "binding": "SCHEDULED_PUBLISH_WORKFLOW",
       "class_name": "ScheduledPublishWorkflow"
-    },
-    {
-      "name": "export-workflow",
-      "binding": "EXPORT_WORKFLOW",
-      "class_name": "ExportWorkflow"
-    },
-    {
-      "name": "import-workflow",
-      "binding": "IMPORT_WORKFLOW",
-      "class_name": "ImportWorkflow"
-    },
+    }
   ],
   "durable_objects": {
     "bindings": [
@@ -174,17 +164,7 @@
           "name": "scheduled-publish-workflow",
           "binding": "SCHEDULED_PUBLISH_WORKFLOW",
           "class_name": "ScheduledPublishWorkflow"
-        },
-        {
-          "name": "export-workflow",
-          "binding": "EXPORT_WORKFLOW",
-          "class_name": "ExportWorkflow"
-        },
-        {
-          "name": "import-workflow",
-          "binding": "IMPORT_WORKFLOW",
-          "class_name": "ImportWorkflow"
-        },
+        }
       ],
       "queues": {
         "producers": [{ "binding": "QUEUE", "queue": "blog-queue" }]

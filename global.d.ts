@@ -29,27 +29,11 @@ declare global {
     commentId: number;
   }
 
-  interface ExportWorkflowParams {
-    taskId: string;
-    postIds?: Array<number>;
-    status?: "draft" | "published";
-    locale?: "zh" | "en";
-  }
-
-  interface ImportWorkflowParams {
-    taskId: string;
-    r2Key: string;
-    mode: "native" | "markdown";
-    locale?: "zh" | "en";
-  }
-
   interface Env extends Cloudflare.Env {
     POST_PROCESS_WORKFLOW: Workflow<PostProcessWorkflowParams>;
     POST_AUTO_SNAPSHOT_WORKFLOW: Workflow<PostAutoSnapshotWorkflowParams>;
     COMMENT_MODERATION_WORKFLOW: Workflow<CommentModerationWorkflowParams>;
     SCHEDULED_PUBLISH_WORKFLOW: Workflow<ScheduledPublishWorkflowParams>;
-    EXPORT_WORKFLOW: Workflow<ExportWorkflowParams>;
-    IMPORT_WORKFLOW: Workflow<ImportWorkflowParams>;
     OAUTH_PROVIDER?: OAuthHelpers;
     QUEUE: Queue<QueueMessage>;
   }
