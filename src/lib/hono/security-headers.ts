@@ -6,6 +6,11 @@ import type { MiddlewareHandler } from "hono";
  *
  * 为本站所有 HTTP 响应统一附加安全响应头。**部署即生效，无需在 Cloudflare 控制台额外配置。**
  *
+ * 【如何关闭】不需要安全头时（例如已在 Cloudflare 控制台用 Transform Rules 配置了等价头），
+ * 只需删除 `src/lib/hono/routes.ts` 中的这一行：
+ *   `app.use("*", securityHeadersMiddleware);`
+ * 即可完全关闭，本文件其它内容不影响功能。
+ *
  * ⚠️ 部署者必读：如果你在 Cloudflare 上部署本仓库，请确认此中间件已启用（默认启用），
  * 或在 Cloudflare 控制台 → Rules → Transform Rules 配置等价的响应头（二选一，避免重复添加）。
  *

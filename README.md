@@ -250,6 +250,7 @@ git clone https://github.com/aa3979674385/flare-stack-blog.git
 | `Permissions-Policy` | 关闭摄像头/麦克风/定位等 | API 滥用 |
 
 > - 中间件内附详细注释，如需调整取值直接改该文件即可。
+> - **不需要安全头时**：删除 `src/lib/hono/routes.ts` 中的 `app.use("*", securityHeadersMiddleware);` 一行即可关闭。
 > - **不要**同时在 Cloudflare 控制台重复添加同名字头（二选一），否则会出现重复值。
 > - 若在 Cloudflare 控制台用 Transform Rules 配置，请先注释/移除该中间件。
 > - 接入第三方统计（如 umami）时，需把统计域名加入 CSP 的 `script-src` / `connect-src`。
