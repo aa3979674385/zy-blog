@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { CaptchaHandle } from "./captcha-types";
 
 const GEETEST_SCRIPT_URL = "https://static.geetest.com/v4/gt4.js";
@@ -86,7 +86,10 @@ export function GeetestWidget({
   onExpire,
   handleRef,
 }: GeetestWidgetProps) {
-  // float 弹窗模式不需要容器元素（不再 appendTo 常驻）
+  // float 弹窗模式：需要一个隐藏的挂载锚点（极验浮层依赖 appendTo 的容器才能弹出）。
+  // 容器本身 display:none 常驻隐藏，验证码仅在 showCaptcha() 弹出时可见。
+  const rawId = useId();
+  const anchorId = `geetest-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const instanceRef = useRef<GeetestInstance | null>(null);
 
   useEffect(() => {
@@ -109,6 +112,8 @@ export function GeetestWidget({
             }
 
             instanceRef.current = instance;
+            // float 模式必须 appendTo 到挂载点（隐藏锚点），showCaptcha() 才会正常弹出浮层
+            instance.appendTo(`#${anchorId}`);
 
             instance.onSuccess(() => {
               const result = instance.getValidate();
@@ -148,6 +153,7 @@ export function GeetestWidget({
     };
   }, [captchaId, onVerify, onError, onExpire, handleRef]);
 
-  // float 弹窗模式：不渲染常驻容器
-  return null;
+  // float 弹窗模式：渲染一个隐藏锚点容器（极验浮层挂载点），
+  // 页面不可见，验证码仅在 showCaptcha() 弹出时出现
+  return <div id={anchorId} style={{ display: "none" }} />;
 }
