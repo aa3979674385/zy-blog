@@ -22,7 +22,9 @@ import type { MiddlewareHandler } from "hono";
  *    - ⚠️ 必须保留 `script-src 'unsafe-inline'`：TanStack Start SSR 会注入内联数据脚本，
  *      去掉会导致**首页白屏**。若想收紧到最高防护，需配合 nonce（见 docs/security-headers.md）。
  *    - ⚠️ 已放行 `static.cloudflareinsights.com`：Cloudflare Web Analytics 统计脚本
- *      （beacon.min.js）。如果关闭了 CF 统计或改用其它统计（如 umami），需相应调整。
+ *      （beacon.min.js）。
+ *    - ⚠️ 已放行 `static.geetest.com` / `gcaptcha4.geetest.com`：极验 GeeTest v4 人机验证
+ *      （验证码脚本 + 校验接口）。若关闭极验改用其它验证码（如 Turnstile），需相应调整。
  *    - ⚠️ 如果以后接入第三方统计（如 umami），需把统计域名加入 script-src / connect-src。
  *
  * 2. X-Frame-Options: DENY
@@ -51,12 +53,12 @@ export const securityHeadersMiddleware: MiddlewareHandler = async (c, next) => {
 
   const CSP = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+    "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://static.geetest.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     "media-src 'self' blob:",
-    "connect-src 'self' https://static.cloudflareinsights.com",
+    "connect-src 'self' https://static.cloudflareinsights.com https://gcaptcha4.geetest.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
