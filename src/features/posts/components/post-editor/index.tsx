@@ -14,7 +14,7 @@ import { EditorTableOfContents } from "./editor-table-of-contents";
 import { useAutoSave, usePostActions } from "./hooks";
 import { PostEditorHeader } from "./post-editor-header";
 import { PostEditorHistoryPanel } from "./post-editor-history-panel";
-import { PostEditorMetadata } from "./post-editor-metadata";
+import { PostEditorMetadata, PostEditorTitle } from "./post-editor-metadata";
 import { PostEditorStatusBar } from "./post-editor-status-bar";
 import { PostResourcePanel } from "@/features/post-resources/components/admin/post-resource-panel";
 import type { PostEditorData, PostEditorProps } from "./types";
@@ -230,18 +230,7 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
               </Button>
             </div>
 
-            <PostEditorMetadata
-              post={post}
-              isGeneratingSlug={isGeneratingSlug}
-              isCalculatingReadTime={isCalculatingReadTime}
-              isGeneratingSummary={isGeneratingSummary}
-              isGeneratingTags={isGeneratingTags}
-              onPostChange={handlePostChange}
-              onGenerateSlug={handleGenerateSlug}
-              onCalculateReadTime={handleCalculateReadTime}
-              onGenerateSummary={handleGenerateSummary}
-              onGenerateTags={handleGenerateTags}
-            />
+            <PostEditorTitle post={post} onPostChange={handlePostChange} />
 
             {/* Editor Area */}
             <div className="min-h-[60vh] pb-32">
@@ -261,7 +250,7 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
           </div>
 
           {/* Sidebar */}
-          <aside className="hidden xl:block sticky top-20 h-full max-h-[calc(100vh-10rem)] w-60">
+          <aside className="custom-scrollbar hidden xl:block sticky top-20 h-full max-h-[calc(100vh-10rem)] w-60 space-y-6 overflow-y-auto pb-6">
             <div className="space-y-6">
               <button
                 type="button"
@@ -290,6 +279,19 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
                 <EditorTableOfContents editor={editorInstance} />
               )}
             </div>
+
+            <PostEditorMetadata
+              post={post}
+              isGeneratingSlug={isGeneratingSlug}
+              isCalculatingReadTime={isCalculatingReadTime}
+              isGeneratingSummary={isGeneratingSummary}
+              isGeneratingTags={isGeneratingTags}
+              onPostChange={handlePostChange}
+              onGenerateSlug={handleGenerateSlug}
+              onCalculateReadTime={handleCalculateReadTime}
+              onGenerateSummary={handleGenerateSummary}
+              onGenerateTags={handleGenerateTags}
+            />
           </aside>
         </div>
       </div>

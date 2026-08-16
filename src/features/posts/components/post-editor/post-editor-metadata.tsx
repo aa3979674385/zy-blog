@@ -1,4 +1,9 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import { Image as ImageIcon, Loader2, Pin, PinOff, Sparkles, Upload, X } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
 import { toast } from "sonner";
@@ -29,6 +34,53 @@ interface PostEditorMetadataProps {
   onCalculateReadTime: () => void;
   onGenerateSummary: () => void;
   onGenerateTags: () => void;
+}
+
+/** 文章标题：保留在编辑区正文上方，不进入侧边栏 */
+export function PostEditorTitle({
+  post,
+  onPostChange,
+}: {
+  post: PostEditorData;
+  onPostChange: (updates: Partial<PostEditorData>) => void;
+}) {
+  return (
+    <div className="mb-12">
+      <TextareaAutosize
+        value={post.title}
+        onChange={(e) => onPostChange({ title: e.target.value })}
+        minRows={1}
+        placeholder={m.editor_title_placeholder()}
+        className="w-full resize-none overflow-hidden border-none bg-transparent p-0 text-4xl font-medium leading-[1.2] tracking-tight text-foreground transition-all placeholder:text-muted-foreground/20 focus:outline-none md:text-6xl font-serif"
+      />
+    </div>
+  );
+}
+
+/** 侧边栏模块卡片容器 */
+function MetadataSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border border-border/30 bg-background/40 p-4">
+      <h3 className="mb-3 text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
+        {title}
+      </h3>
+      <div className="space-y-5">{children}</div>
+    </section>
+  );
+}
+
+function FieldLabel({ children }: { children: ReactNode }) {
+  return (
+    <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
+      {children}
+    </label>
+  );
 }
 
 export function PostEditorMetadata({
@@ -74,22 +126,11 @@ export function PostEditorMetadata({
   };
 
   return (
-    <>
-      <div className="mb-12">
-        <TextareaAutosize
-          value={post.title}
-          onChange={(e) => onPostChange({ title: e.target.value })}
-          minRows={1}
-          placeholder={m.editor_title_placeholder()}
-          className="w-full resize-none overflow-hidden border-none bg-transparent p-0 text-4xl font-medium leading-[1.2] tracking-tight text-foreground transition-all placeholder:text-muted-foreground/20 focus:outline-none md:text-6xl font-serif"
-        />
-      </div>
-
-      <div className="mb-16 grid grid-cols-1 gap-x-12 gap-y-8 border-t border-border/30 pt-8 md:grid-cols-3">
-        <div className="space-y-3">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-            {m.editor_meta_status()}
-          </label>
+    <div className="space-y-6">
+      {/* 模块 1：发布设置 */}
+      <MetadataSection title="发布设置">
+        <div className="space-y-2">
+          <FieldLabel>{m.editor_meta_status()}</FieldLabel>
           <div className="flex items-center gap-4">
             {POST_STATUSES.map((status) => (
               <button
@@ -117,39 +158,31 @@ export function PostEditorMetadata({
         </div>
 
         {post.status === "published" && (
-          <div className="space-y-3">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-              {m.editor_meta_pin()}
-            </label>
-            <div>
-              <button
-                onClick={() =>
-                  onPostChange({
-                    pinnedAt: post.pinnedAt ? null : new Date(),
-                  })
+          <div className="space-y-2">
+            <FieldLabel>{m.editor_meta_pin()}</FieldLabel>
+            <button
+              onClick={() =>
+                onPostChange({
+                  pinnedAt: post.pinnedAt ? null : new Date(),
+                })
+              }
+              className={`
+                flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider transition-colors
+                ${
+                  post.pinnedAt
+                    ? "border-b border-foreground font-bold text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }
-                className={`
-                  flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider transition-colors
-                  ${
-                    post.pinnedAt
-                      ? "border-b border-foreground font-bold text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }
-                `}
-              >
-                {post.pinnedAt ? <Pin size={12} /> : <PinOff size={12} />}
-                {post.pinnedAt
-                  ? m.editor_meta_pinned()
-                  : m.editor_meta_unpinned()}
-              </button>
-            </div>
+              `}
+            >
+              {post.pinnedAt ? <Pin size={12} /> : <PinOff size={12} />}
+              {post.pinnedAt ? m.editor_meta_pinned() : m.editor_meta_unpinned()}
+            </button>
           </div>
         )}
 
-        <div className="space-y-3">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-            {m.editor_meta_published_at()}
-          </label>
+        <div className="space-y-2">
+          <FieldLabel>{m.editor_meta_published_at()}</FieldLabel>
           <div className="text-xs font-mono">
             <DatePicker
               value={
@@ -157,9 +190,7 @@ export function PostEditorMetadata({
               }
               onChange={(dateStr) =>
                 onPostChange({
-                  publishedAt: dateStr
-                    ? new Date(`${dateStr}T12:00:00Z`)
-                    : null,
+                  publishedAt: dateStr ? new Date(`${dateStr}T12:00:00Z`) : null,
                 })
               }
               className="h-auto! border-none! bg-transparent! p-0! text-xs text-foreground font-mono"
@@ -167,10 +198,8 @@ export function PostEditorMetadata({
           </div>
         </div>
 
-        <div className="space-y-3">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-            {m.editor_meta_read_time()}
-          </label>
+        <div className="space-y-2">
+          <FieldLabel>{m.editor_meta_read_time()}</FieldLabel>
           <div className="group flex items-center gap-2">
             <Input
               type="number"
@@ -198,15 +227,14 @@ export function PostEditorMetadata({
             </button>
           </div>
         </div>
+      </MetadataSection>
 
-        <div className="col-span-1 space-y-3 md:col-span-3">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-            {m.editor_meta_slug()}
-          </label>
+      {/* 模块 2：链接 · 分类 · 标签 */}
+      <MetadataSection title="链接 · 分类 · 标签">
+        <div className="space-y-2">
+          <FieldLabel>{m.editor_meta_slug()}</FieldLabel>
           <div className="group flex items-center gap-2">
-            <span className="text-xs font-mono text-muted-foreground">
-              /post/
-            </span>
+            <span className="text-xs font-mono text-muted-foreground">/post/</span>
             <Input
               type="text"
               value={post.slug || ""}
@@ -228,11 +256,9 @@ export function PostEditorMetadata({
           </div>
         </div>
 
-        <div className="col-span-1 space-y-3 md:col-span-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-              {m.editor_meta_tags()}
-            </label>
+            <FieldLabel>{m.editor_meta_tags()}</FieldLabel>
             <button
               onClick={onGenerateTags}
               disabled={isGeneratingTags}
@@ -246,27 +272,23 @@ export function PostEditorMetadata({
               {m.editor_meta_auto_generate()}
             </button>
           </div>
-          <TagSelector
-            value={post.tagIds}
-            onChange={(tagIds) => onPostChange({ tagIds })}
-          />
+          <TagSelector value={post.tagIds} onChange={(tagIds) => onPostChange({ tagIds })} />
         </div>
 
-        <div className="col-span-1 space-y-3 md:col-span-3">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-            分类（独立，与标签解耦）
-          </label>
+        <div className="space-y-2">
+          <FieldLabel>分类（独立，与标签解耦）</FieldLabel>
           <CategorySelector
             value={post.categoryIds}
             onChange={(categoryIds) => onPostChange({ categoryIds })}
           />
         </div>
+      </MetadataSection>
 
-        <div className="col-span-1 space-y-3 md:col-span-3">
+      {/* 模块 3：摘要 · 封面 */}
+      <MetadataSection title="摘要 · 封面">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-              {m.editor_meta_summary()}
-            </label>
+            <FieldLabel>{m.editor_meta_summary()}</FieldLabel>
             <button
               onClick={onGenerateSummary}
               disabled={isGeneratingSummary}
@@ -289,16 +311,14 @@ export function PostEditorMetadata({
         </div>
 
         {/* 封面图：留空时由后端自动从正文第一张尺寸足够的图抓取 */}
-        <div className="col-span-1 space-y-3 md:col-span-3">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-            封面图（留空自动取正文首图）
-          </label>
+        <div className="space-y-2">
+          <FieldLabel>封面图（留空自动取正文首图）</FieldLabel>
           {post.coverImage ? (
             <div className="relative inline-block">
               <img
                 src={post.coverImage}
                 alt="封面预览"
-                className="h-28 w-44 rounded object-cover"
+                className="h-24 w-40 rounded object-cover"
               />
               <button
                 type="button"
@@ -350,7 +370,7 @@ export function PostEditorMetadata({
             </button>
           </div>
         </div>
-      </div>
+      </MetadataSection>
 
       {/* 从媒体库选择封面图 */}
       <MediaPickerModal
@@ -362,6 +382,6 @@ export function PostEditorMetadata({
           toast.success(`已设置封面图「${media.fileName}」`);
         }}
       />
-    </>
+    </div>
   );
 }
