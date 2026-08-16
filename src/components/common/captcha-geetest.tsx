@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { CaptchaHandle } from "./captcha-types";
 
 const GEETEST_SCRIPT_URL = "https://static.geetest.com/v4/gt4.js";
@@ -15,10 +15,11 @@ interface GeetestValidateResult {
 interface GeetestInstance {
   appendTo: (selector: string | HTMLElement) => void;
   getValidate: () => GeetestValidateResult | null;
+  onReady: (handler: () => void) => void;
   onSuccess: (handler: () => void) => void;
   onError: (handler: () => void) => void;
   onFail: (handler: () => void) => void;
-  /** float（浮动弹窗）模式下调用，弹出验证码浮层 */
+  /** bind（隐藏按钮）模式下调用，弹出验证码 */
   showCaptcha: () => void;
   reset: () => void;
   destroy?: () => void;
@@ -71,11 +72,13 @@ export interface GeetestWidgetProps {
 }
 
 /**
- * 极验 v4 行为验证组件（float 弹窗模式）。
+ * 极验 v4 行为验证组件（bind 隐藏按钮模式）。
  * 仅在客户端渲染 —— 由上层 <Captcha> 统一做 mounted / provider 守卫。
  *
- * 与 Turnstile（常驻）不同，极验采用 float 弹窗：**页面不常驻验证框**，
- * 由调用方在提交按钮上触发 handleRef.showCaptcha() 弹出浮层；
+ * 依据官方文档（docs.geetest.com/gt4/apirefer/api/web）：
+ * - product: "bind"（隐藏按钮式）时 appendTo 无效，验证时调用 showCaptcha() 实例方法；
+ * - showCaptcha() 必须在 onReady 之后调用，否则无反应。
+ * 页面不渲染任何验证码 UI，由调用方在提交按钮上触发 handleRef.showCaptcha() 弹出验证；
  * 验证通过后把 4 个字段序列化成一个字符串交给上层，
  * 这样与 Turnstile 一样只需在请求头里带一个 token，服务端再按服务商解析。
  */
@@ -86,11 +89,12 @@ export function GeetestWidget({
   onExpire,
   handleRef,
 }: GeetestWidgetProps) {
-  // float 弹窗模式：需要一个隐藏的挂载锚点（极验浮层依赖 appendTo 的容器才能弹出）。
-  // 容器本身 display:none 常驻隐藏，验证码仅在 showCaptcha() 弹出时可见。
-  const rawId = useId();
-  const anchorId = `geetest-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  // bind（隐藏按钮）模式：页面不渲染任何验证码 UI，由程序在提交时调用 showCaptcha() 弹出。
+  // 依据官方文档（docs.geetest.com/gt4/apirefer/api/web）：
+  // - product: "bind" 时 appendTo 无效，验证时调用 showCaptcha() 实例方法
+  // - 必须在 onReady（验证码就绪）之后调用 showCaptcha，否则无反应
   const instanceRef = useRef<GeetestInstance | null>(null);
+  const readyRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -102,7 +106,7 @@ export function GeetestWidget({
         window.initGeetest4(
           {
             captchaId,
-            product: "float",
+            product: "bind",
             language: resolveLanguage(),
           },
           (instance) => {
@@ -112,8 +116,12 @@ export function GeetestWidget({
             }
 
             instanceRef.current = instance;
-            // float 模式必须 appendTo 到挂载点（隐藏锚点），showCaptcha() 才会正常弹出浮层
-            instance.appendTo(`#${anchorId}`);
+            readyRef.current = false;
+
+            // 验证码就绪后才能调用 showCaptcha
+            instance.onReady(() => {
+              readyRef.current = true;
+            });
 
             instance.onSuccess(() => {
               const result = instance.getValidate();
@@ -133,7 +141,12 @@ export function GeetestWidget({
             if (handleRef) {
               handleRef.current = {
                 reset: () => instance.reset(),
-                showCaptcha: () => instance.showCaptcha(),
+                // 官方文档：bind 模式 showCaptcha 显示验证码；未就绪（onReady 未触发）时调用无反应
+                showCaptcha: () => {
+                  if (readyRef.current) {
+                    instance.showCaptcha();
+                  }
+                },
               };
             }
           },
@@ -145,6 +158,7 @@ export function GeetestWidget({
 
     return () => {
       isMounted = false;
+      readyRef.current = false;
       instanceRef.current?.destroy?.();
       instanceRef.current = null;
       if (handleRef) {
@@ -153,13 +167,6 @@ export function GeetestWidget({
     };
   }, [captchaId, onVerify, onError, onExpire, handleRef]);
 
-  // float 弹窗模式：渲染一个"移出屏幕"的锚点容器（极验浮层挂载点）。
-  // 不能用 display:none（会把弹出后的浮层一并隐藏），
-  // 而是绝对定位移出可视区：页面不可见，showCaptcha() 弹出浮层时（浮层 fixed 定位到视口）可见。
-  return (
-    <div
-      id={anchorId}
-      style={{ position: "fixed", top: "-9999px", left: "-9999px" }}
-    />
-  );
+  // bind（隐藏按钮）模式：页面不渲染任何验证码 UI，验证码仅在 showCaptcha() 时弹出
+  return null;
 }
