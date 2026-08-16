@@ -32,7 +32,6 @@ const createRegisterSchema = (messages: Messages) =>
 type RegisterSchema = z.infer<ReturnType<typeof createRegisterSchema>>;
 
 export interface UseRegisterFormOptions {
-  turnstileToken: string | null;
   turnstilePending: boolean;
   resetTurnstile: () => void;
   isEmailConfigured: boolean;
@@ -40,7 +39,6 @@ export interface UseRegisterFormOptions {
 
 export function useRegisterForm(options: UseRegisterFormOptions) {
   const {
-    turnstileToken,
     turnstilePending,
     resetTurnstile,
     isEmailConfigured,
@@ -63,8 +61,8 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
       name: data.name,
       callbackURL: `${window.location.origin}/verify-email`,
       fetchOptions: {
-        // 弹窗模式下 token 在 await 期间写入全局，闭包里的 turnstileToken 已陈旧
-        headers: { "X-Turnstile-Token": getCaptchaToken() ?? turnstileToken ?? "" },
+        // 弹窗模式下 token 由 onVerify 写入全局，闭包里的旧值已不可靠，改读 getCaptchaToken()
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? "" },
       },
     });
 

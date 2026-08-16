@@ -27,7 +27,6 @@ export const Route = createFileRoute("/_auth/register")({
 function RouteComponent() {
   const { isEmailConfigured } = useRouteContext({ from: "/_auth" });
   const {
-    token: turnstileToken,
     reset: resetTurnstile,
     ensureVerified,
     turnstileProps,
@@ -35,7 +34,6 @@ function RouteComponent() {
 
   const registerForm = useRegisterForm({
     // 弹窗触发模式：验证码不因"未验证"禁用提交按钮，点击提交时由 ensureVerified() 触发
-    turnstileToken,
     turnstilePending: false,
     resetTurnstile,
     isEmailConfigured,

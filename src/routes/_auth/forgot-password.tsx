@@ -22,7 +22,6 @@ export const Route = createFileRoute("/_auth/forgot-password")({
 
 function RouteComponent() {
   const {
-    token: turnstileToken,
     reset: resetTurnstile,
     ensureVerified,
     turnstileProps,
@@ -30,7 +29,6 @@ function RouteComponent() {
 
   const forgotPasswordForm = useForgotPasswordForm({
     // 弹窗触发模式：验证码不因"未验证"禁用提交按钮，点击提交时由 ensureVerified() 触发
-    turnstileToken,
     turnstilePending: false,
     resetTurnstile,
   });

@@ -30,7 +30,6 @@ function RouteComponent() {
   const search = Route.useSearch();
   const location = useLocation();
   const {
-    token: turnstileToken,
     reset: resetTurnstile,
     ensureVerified,
     turnstileProps,
@@ -55,7 +54,6 @@ function RouteComponent() {
   const loginForm = useLoginForm({
     // 弹窗触发模式：验证码不再常驻、不因"未验证"禁用提交按钮，
     // 点击提交时由 ensureVerified() 弹出验证（极验）/ 校验常驻框（Turnstile）。
-    turnstileToken,
     turnstilePending: false,
     resetTurnstile,
     redirectTo: resolvedRedirectTo,

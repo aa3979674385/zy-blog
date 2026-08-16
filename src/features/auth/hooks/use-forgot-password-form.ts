@@ -19,13 +19,12 @@ type ForgotPasswordSchema = z.infer<
 >;
 
 export interface UseForgotPasswordFormOptions {
-  turnstileToken: string | null;
   turnstilePending: boolean;
   resetTurnstile: () => void;
 }
 
 export function useForgotPasswordForm(options: UseForgotPasswordFormOptions) {
-  const { turnstileToken, turnstilePending, resetTurnstile } = options;
+  const { turnstilePending, resetTurnstile } = options;
 
   const [isSent, setIsSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
@@ -40,8 +39,8 @@ export function useForgotPasswordForm(options: UseForgotPasswordFormOptions) {
       email: data.email,
       redirectTo: `${window.location.origin}/reset-link`,
       fetchOptions: {
-        // 弹窗模式下 token 在 await 期间写入全局，闭包里的 turnstileToken 已陈旧
-        headers: { "X-Turnstile-Token": getCaptchaToken() ?? turnstileToken ?? "" },
+        // 弹窗模式下 token 由 onVerify 写入全局，闭包里的旧值已不可靠，改读 getCaptchaToken()
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? "" },
       },
     });
 

@@ -26,15 +26,13 @@ const createLoginSchema = (messages: Messages) =>
 type LoginSchema = z.infer<ReturnType<typeof createLoginSchema>>;
 
 export interface UseLoginFormOptions {
-  turnstileToken: string | null;
   turnstilePending: boolean;
   resetTurnstile: () => void;
   redirectTo?: string;
 }
 
 export function useLoginForm(options: UseLoginFormOptions) {
-  const { turnstileToken, turnstilePending, resetTurnstile, redirectTo } =
-    options;
+  const { turnstilePending, resetTurnstile, redirectTo } = options;
 
   const [loginStep, setLoginStep] = useState<"IDLE" | "VERIFYING" | "SUCCESS">(
     "IDLE",
@@ -73,13 +71,11 @@ export function useLoginForm(options: UseLoginFormOptions) {
   const latestResendStateRef = useRef({
     emailValue: "",
     turnstilePending,
-    turnstileToken,
   });
 
   latestResendStateRef.current = {
     emailValue,
     turnstilePending,
-    turnstileToken,
   };
 
   const onSubmit = async (data: LoginSchema) => {
@@ -89,9 +85,9 @@ export function useLoginForm(options: UseLoginFormOptions) {
       email: data.email,
       password: data.password,
       fetchOptions: {
-        // 弹窗模式下 token 在 await 期间通过 onVerify 写入 window.__captchaToken，
-        // 闭包里的 turnstileToken 还是旧值，必须从 getCaptchaToken() 取实时 token。
-        headers: { "X-Turnstile-Token": getCaptchaToken() ?? turnstileToken ?? "" },
+        // 弹窗模式下 token 由 onVerify 写入全局 window.__captchaToken，
+        // 必须从 getCaptchaToken() 取实时 token，避免闭包陈旧。
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? "" },
       },
     });
 
@@ -139,7 +135,6 @@ export function useLoginForm(options: UseLoginFormOptions) {
     const {
       emailValue: currentEmailValue,
       turnstilePending: isTurnstilePending,
-      turnstileToken: currentTurnstileToken,
     } = latestResendStateRef.current;
 
     if (!currentEmailValue) return;
@@ -155,7 +150,7 @@ export function useLoginForm(options: UseLoginFormOptions) {
       callbackURL: `${window.location.origin}/verify-email`,
       fetchOptions: {
         // 同 onSubmit：从全局实时读取 token，避免闭包陈旧
-        headers: { "X-Turnstile-Token": getCaptchaToken() ?? currentTurnstileToken ?? "" },
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? "" },
       },
     });
 
