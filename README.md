@@ -236,6 +236,24 @@ src/
 git clone https://github.com/aa3979674385/flare-stack-blog.git
 ```
 
+### 安全配置（部署者必读）
+
+本项目已内置**安全响应头中间件**（`src/lib/hono/security-headers.ts`，默认启用），部署即自动为所有响应附加：
+
+| 响应头 | 值 | 防什么 |
+| :--- | :--- | :--- |
+| `Content-Security-Policy` | 白名单限制脚本/样式/图片来源（含 `'unsafe-inline'` 兼容 SSR） | XSS / 注入 |
+| `X-Frame-Options` | `DENY` | 点击劫持 |
+| `X-Content-Type-Options` | `nosniff` | MIME 嗅探 |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | SSL 剥离 |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | URL 泄露 |
+| `Permissions-Policy` | 关闭摄像头/麦克风/定位等 | API 滥用 |
+
+> - 中间件内附详细注释，如需调整取值直接改该文件即可。
+> - **不要**同时在 Cloudflare 控制台重复添加同名字头（二选一），否则会出现重复值。
+> - 若在 Cloudflare 控制台用 Transform Rules 配置，请先注释/移除该中间件。
+> - 接入第三方统计（如 umami）时，需把统计域名加入 CSP 的 `script-src` / `connect-src`。
+
 ### 环境变量参考
 
 | 文件        | 用途                                   |

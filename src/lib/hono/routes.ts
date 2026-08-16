@@ -21,6 +21,7 @@ import categoriesRoute from "@/features/categories/api/hono/categories.list.rout
 import { serverEnv } from "@/lib/env/server.env";
 import { resourceDownloadRedirectRoute } from "@/features/post-resources/api/hono/redirect.route";
 import captchaConfigRoute from "./captcha-config.route";
+import { securityHeadersMiddleware } from "./security-headers";
 import { createRateLimiterIdentifier, getExecutionContext } from "./helper";
 import {
   baseMiddleware,
@@ -35,6 +36,9 @@ export const app = new Hono<{ Bindings: Env }>();
 
 // 站点维护模式：最先检查（在缓存之前），维护期间除后台/登录/静态资源外全部返回维护页
 app.all("*", maintenanceMiddleware);
+
+// 安全响应头：所有响应统一附加 CSP / X-Frame-Options / HSTS 等（见 security-headers.ts 说明）
+app.use("*", securityHeadersMiddleware);
 
 app.get("*", cacheMiddleware);
 
