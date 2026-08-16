@@ -1,0 +1,14 @@
+# Workers Assets 响应头配置
+# 带内容 hash 的构建产物：浏览器 + CDN 永久缓存（文件名变化即内容变化）
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  CDN-Cache-Control: public, max-age=31536000, immutable
+
+# favicon 等图标也基本不变，可长缓存
+/favicon.svg
+/favicon.ico
+/favicon-96x96.png
+/apple-touch-icon.png
+/web-app-manifest-192x192.png
+/web-app-manifest-512x512.png
+  Cache-Control: public, max-age=86400

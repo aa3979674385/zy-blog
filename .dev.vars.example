@@ -1,0 +1,20 @@
+# Turnstile 人机验证配置模板
+# 用法：复制本文件为 `.dev.vars`（已被 .gitignore 忽略，不会提交到仓库），把下面两处占位符替换成真实值。
+# 这两个值需在 Cloudflare 控制台 -> Turnstile 面板，为你的域名创建一个站点后获取。
+
+# 客户端站点密钥：会打包进前端，决定登录/注册页是否显示验证框。
+# 没配时 src/components/common/turnstile.tsx 会直接 return null（即你之前看到的“空白/不显示”）。
+VITE_TURNSTILE_SITE_KEY=YOUR_SITE_KEY
+
+# 服务端密钥：后端校验 Turnstile token 时使用，必须保密，不要写进 wrangler.jsonc 或提交到仓库。
+TURNSTILE_SECRET_KEY=YOUR_SECRET_KEY
+
+# ===== 极验 GeeTest v4（可选，与 Turnstile 二选一）=====
+# 服务端私钥：极验后台的 captcha_key，必须保密，不要写进 wrangler.jsonc 或提交到仓库。
+GEETEST_CAPTCHA_KEY=YOUR_GEETEST_CAPTCHA_KEY
+
+# 当前生效的人机验证服务商：turnstile（默认）| geetest | none
+CAPTCHA_PROVIDER=turnstile
+
+# 极验验证 ID（公开值，对应极验后台的 captcha_id），前端渲染与服务端二次校验都会用到。
+VITE_GEETEST_CAPTCHA_ID=YOUR_GEETEST_CAPTCHA_ID
