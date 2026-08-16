@@ -16,6 +16,8 @@ import type { MiddlewareHandler } from "hono";
  *    - 本站资源均为同源（/assets、/images），故默认只放行 'self'。
  *    - ⚠️ 必须保留 `script-src 'unsafe-inline'`：TanStack Start SSR 会注入内联数据脚本，
  *      去掉会导致**首页白屏**。若想收紧到最高防护，需配合 nonce（见 docs/security-headers.md）。
+ *    - ⚠️ 已放行 `static.cloudflareinsights.com`：Cloudflare Web Analytics 统计脚本
+ *      （beacon.min.js）。如果关闭了 CF 统计或改用其它统计（如 umami），需相应调整。
  *    - ⚠️ 如果以后接入第三方统计（如 umami），需把统计域名加入 script-src / connect-src。
  *
  * 2. X-Frame-Options: DENY
@@ -44,12 +46,12 @@ export const securityHeadersMiddleware: MiddlewareHandler = async (c, next) => {
 
   const CSP = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     "media-src 'self' blob:",
-    "connect-src 'self'",
+    "connect-src 'self' https://static.cloudflareinsights.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
