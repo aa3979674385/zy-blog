@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { AUTH_KEYS } from "@/features/auth/queries";
 import { usePreviousLocation } from "@/hooks/use-previous-location";
+import { getCaptchaToken } from "@/components/common/captcha";
 import { authClient } from "@/lib/auth/auth.client";
 import { getRegisterAuthErrorMessage } from "@/lib/auth/auth-errors";
 import type { Messages } from "@/lib/i18n";
@@ -62,7 +63,8 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
       name: data.name,
       callbackURL: `${window.location.origin}/verify-email`,
       fetchOptions: {
-        headers: { "X-Turnstile-Token": turnstileToken || "" },
+        // 弹窗模式下 token 在 await 期间写入全局，闭包里的 turnstileToken 已陈旧
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? turnstileToken ?? "" },
       },
     });
 

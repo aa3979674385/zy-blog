@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getCaptchaToken } from "@/components/common/captcha";
 import { authClient } from "@/lib/auth/auth.client";
 import { getForgotPasswordAuthErrorMessage } from "@/lib/auth/auth-errors";
 import type { Messages } from "@/lib/i18n";
@@ -39,7 +40,8 @@ export function useForgotPasswordForm(options: UseForgotPasswordFormOptions) {
       email: data.email,
       redirectTo: `${window.location.origin}/reset-link`,
       fetchOptions: {
-        headers: { "X-Turnstile-Token": turnstileToken || "" },
+        // 弹窗模式下 token 在 await 期间写入全局，闭包里的 turnstileToken 已陈旧
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? turnstileToken ?? "" },
       },
     });
 

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { AUTH_KEYS } from "@/features/auth/queries";
 import { usePreviousLocation } from "@/hooks/use-previous-location";
+import { getCaptchaToken } from "@/components/common/captcha";
 import { authClient } from "@/lib/auth/auth.client";
 import {
   getLoginAuthErrorMessage,
@@ -88,7 +89,9 @@ export function useLoginForm(options: UseLoginFormOptions) {
       email: data.email,
       password: data.password,
       fetchOptions: {
-        headers: { "X-Turnstile-Token": turnstileToken || "" },
+        // 弹窗模式下 token 在 await 期间通过 onVerify 写入 window.__captchaToken，
+        // 闭包里的 turnstileToken 还是旧值，必须从 getCaptchaToken() 取实时 token。
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? turnstileToken ?? "" },
       },
     });
 
@@ -151,7 +154,8 @@ export function useLoginForm(options: UseLoginFormOptions) {
       email: currentEmailValue,
       callbackURL: `${window.location.origin}/verify-email`,
       fetchOptions: {
-        headers: { "X-Turnstile-Token": currentTurnstileToken || "" },
+        // 同 onSubmit：从全局实时读取 token，避免闭包陈旧
+        headers: { "X-Turnstile-Token": getCaptchaToken() ?? currentTurnstileToken ?? "" },
       },
     });
 
