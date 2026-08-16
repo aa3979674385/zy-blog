@@ -189,7 +189,9 @@ interface UseCaptchaResult {
   reset: () => void;
   /** 懒加载激活：幂等，调用即启用验证（并预热探测请求） */
   activate: () => void;
-  /** 确保已完成人机验证：已有 token 直接通过；否则激活并等待用户完成挑战，超时（默认 30s）未通过返回 false */
+  /** 主动触发验证（极验 float 弹窗弹出；Turnstile 常驻框为空操作） */
+  showCaptcha: () => void;
+  /** 确保已完成人机验证：已有 token 直接通过；否则激活并触发验证，等待用户完成挑战，超时（默认 30s）未通过返回 false */
   ensureVerified: (timeoutMs?: number) => Promise<boolean>;
   captchaProps: CaptchaProps;
   /** 历史命名别名，保持既有调用点与主题契约不变 */
@@ -264,10 +266,16 @@ export function useCaptcha(
     void fetchProvider();
   }, []);
 
+  /** 主动弹出/触发验证（极验 float 弹窗；Turnstile 常驻为空操作） */
+  const showCaptcha = useCallback(() => {
+    widgetIdRef.current?.showCaptcha?.();
+  }, []);
+
   /**
    * 确保已完成人机验证：
    * - 已有 token 直接返回 true；
-   * - 否则激活并等待用户完成挑战，超时（默认 30s）未通过返回 false；
+   * - 否则激活并**触发验证**（极验弹窗 / Turnstile 常驻框），等待用户完成挑战，
+   *   超时（默认 30s）未通过返回 false；
    * - provider 为 none/null（未启用验证）时直接返回 true。
    */
   const ensureVerified = useCallback(
@@ -276,6 +284,13 @@ export function useCaptcha(
       activate();
       const provider = await fetchProvider();
       if (provider === "none" || provider === null) return true;
+      // 等待验证组件挂载出 showCaptcha 句柄（极验 initGeetest4 为异步），
+      // 最多等 5 秒；句柄就绪后触发弹窗/验证。
+      const deadline = Date.now() + 5000;
+      while (!widgetIdRef.current?.showCaptcha && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      widgetIdRef.current?.showCaptcha?.();
       return new Promise<boolean>((resolve) => {
         const timer = setTimeout(() => resolve(false), timeoutMs);
         waitersRef.current.push((ok) => {
@@ -284,7 +299,7 @@ export function useCaptcha(
         });
       });
     },
-    [activate],
+    [activate, showCaptcha],
   );
 
   const captchaProps: CaptchaProps = {
@@ -304,6 +319,7 @@ export function useCaptcha(
     token,
     reset,
     activate,
+    showCaptcha,
     ensureVerified,
     captchaProps,
     /** 历史命名别名，保持既有调用点与主题契约不变 */

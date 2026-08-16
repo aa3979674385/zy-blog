@@ -22,17 +22,26 @@ export const Route = createFileRoute("/_auth/forgot-password")({
 
 function RouteComponent() {
   const {
-    isPending: turnstilePending,
     token: turnstileToken,
     reset: resetTurnstile,
+    ensureVerified,
     turnstileProps,
   } = useTurnstile("forgot-password");
 
   const forgotPasswordForm = useForgotPasswordForm({
+    // 弹窗触发模式：验证码不因"未验证"禁用提交按钮，点击提交时由 ensureVerified() 触发
     turnstileToken,
-    turnstilePending,
+    turnstilePending: false,
     resetTurnstile,
   });
+
+  // 提交前先确保人机验证通过（点击提交按钮才弹出验证码），通过后再真正提交
+  const rawSubmit = forgotPasswordForm.handleSubmit;
+  forgotPasswordForm.handleSubmit = async (e?: React.BaseSyntheticEvent) => {
+    e?.preventDefault?.();
+    const ok = await ensureVerified();
+    if (ok) await rawSubmit(e);
+  };
 
   const turnstileElement = (
     <div className="flex justify-center">
@@ -45,7 +54,7 @@ function RouteComponent() {
       forgotPasswordForm={{
         ...forgotPasswordForm,
         turnstileProps,
-        turnstilePending,
+        turnstilePending: false,
       }}
       turnstileElement={turnstileElement}
     />

@@ -9,8 +9,8 @@ import { useFriendLinks } from "./use-friend-links";
 export function useFriendLinkSubmitForm(defaultEmail?: string) {
   const { submit, isSubmitting } = useFriendLinks();
   const {
-    isPending: turnstilePending,
     reset: resetTurnstile,
+    ensureVerified,
     turnstileProps,
   } = useTurnstile("friend-link");
 
@@ -33,11 +33,19 @@ export function useFriendLinkSubmitForm(defaultEmail?: string) {
     }
   };
 
+  // 弹窗触发模式：提交前先确保人机验证通过（点击提交才弹验证码），通过后再真正提交
+  const guardedSubmit = async (data: SubmitFriendLinkInput) => {
+    const ok = await ensureVerified();
+    if (!ok) return;
+    await handleSubmit(data);
+  };
+
   return {
     register: form.register,
     errors: form.formState.errors,
-    handleSubmit: form.handleSubmit(handleSubmit),
-    isSubmitting: isSubmitting || turnstilePending,
+    handleSubmit: form.handleSubmit(guardedSubmit),
+    // 弹窗触发模式下提交按钮不再因"未验证"禁用（验证码由点击触发）
+    isSubmitting,
     turnstileProps,
   };
 }

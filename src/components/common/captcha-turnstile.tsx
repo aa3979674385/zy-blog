@@ -89,6 +89,9 @@ export function TurnstileWidget({
                 window.turnstile.reset(widgetIdRef.current);
               }
             },
+            // Turnstile 为常驻（appearance: always）模式，验证框始终可见，
+            // 无需"点击触发"，保持空操作以兼容统一契约。
+            showCaptcha: () => {},
           };
         }
       })

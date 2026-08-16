@@ -30,9 +30,9 @@ function RouteComponent() {
   const search = Route.useSearch();
   const location = useLocation();
   const {
-    isPending: turnstilePending,
     token: turnstileToken,
     reset: resetTurnstile,
+    ensureVerified,
     turnstileProps,
   } = useTurnstile("login");
 
@@ -53,11 +53,21 @@ function RouteComponent() {
   }
 
   const loginForm = useLoginForm({
+    // 弹窗触发模式：验证码不再常驻、不因"未验证"禁用提交按钮，
+    // 点击提交时由 ensureVerified() 弹出验证（极验）/ 校验常驻框（Turnstile）。
     turnstileToken,
-    turnstilePending,
+    turnstilePending: false,
     resetTurnstile,
     redirectTo: resolvedRedirectTo,
   });
+
+  // 提交前先确保人机验证通过（点击提交按钮才弹出验证码），通过后再真正提交
+  const rawSubmit = loginForm.handleSubmit;
+  loginForm.handleSubmit = async (e?: React.BaseSyntheticEvent) => {
+    e?.preventDefault?.();
+    const ok = await ensureVerified();
+    if (ok) await rawSubmit(e);
+  };
 
   const socialLogin = useSocialLogin({
     redirectTo: resolvedRedirectTo,
@@ -81,7 +91,7 @@ function RouteComponent() {
       loginForm={{
         ...loginForm,
         turnstileProps,
-        turnstilePending,
+        turnstilePending: false,
       }}
       socialLogin={socialLogin}
       turnstileElement={turnstileElement}

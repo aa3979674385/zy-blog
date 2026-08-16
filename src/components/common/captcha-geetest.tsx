@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { CaptchaHandle } from "./captcha-types";
 
 const GEETEST_SCRIPT_URL = "https://static.geetest.com/v4/gt4.js";
@@ -18,6 +18,8 @@ interface GeetestInstance {
   onSuccess: (handler: () => void) => void;
   onError: (handler: () => void) => void;
   onFail: (handler: () => void) => void;
+  /** float（浮动弹窗）模式下调用，弹出验证码浮层 */
+  showCaptcha: () => void;
   reset: () => void;
   destroy?: () => void;
 }
@@ -69,9 +71,11 @@ export interface GeetestWidgetProps {
 }
 
 /**
- * 极验 v4 行为验证组件。
+ * 极验 v4 行为验证组件（float 弹窗模式）。
  * 仅在客户端渲染 —— 由上层 <Captcha> 统一做 mounted / provider 守卫。
  *
+ * 与 Turnstile（常驻）不同，极验采用 float 弹窗：**页面不常驻验证框**，
+ * 由调用方在提交按钮上触发 handleRef.showCaptcha() 弹出浮层；
  * 验证通过后把 4 个字段序列化成一个字符串交给上层，
  * 这样与 Turnstile 一样只需在请求头里带一个 token，服务端再按服务商解析。
  */
@@ -82,9 +86,7 @@ export function GeetestWidget({
   onExpire,
   handleRef,
 }: GeetestWidgetProps) {
-  // appendTo 走 CSS 选择器，useId 生成的 ":" 在选择器里非法，需要剔除
-  const rawId = useId();
-  const containerId = `geetest-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  // float 弹窗模式不需要容器元素（不再 appendTo 常驻）
   const instanceRef = useRef<GeetestInstance | null>(null);
 
   useEffect(() => {
@@ -107,7 +109,6 @@ export function GeetestWidget({
             }
 
             instanceRef.current = instance;
-            instance.appendTo(`#${containerId}`);
 
             instance.onSuccess(() => {
               const result = instance.getValidate();
@@ -127,6 +128,7 @@ export function GeetestWidget({
             if (handleRef) {
               handleRef.current = {
                 reset: () => instance.reset(),
+                showCaptcha: () => instance.showCaptcha(),
               };
             }
           },
@@ -144,7 +146,8 @@ export function GeetestWidget({
         handleRef.current = null;
       }
     };
-  }, [captchaId, containerId, onVerify, onError, onExpire, handleRef]);
+  }, [captchaId, onVerify, onError, onExpire, handleRef]);
 
-  return <div id={containerId} />;
+  // float 弹窗模式：不渲染常驻容器
+  return null;
 }
