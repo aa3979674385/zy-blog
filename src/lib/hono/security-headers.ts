@@ -51,14 +51,19 @@ import type { MiddlewareHandler } from "hono";
 export const securityHeadersMiddleware: MiddlewareHandler = async (c, next) => {
   await next();
 
+  // 极验 v4 官方域名（验证码脚本 / load 分流 / 校验接口 / iframe 渲染，全部放行）
+  const GEETEST_DOMAINS =
+    "https://*.geetest.com https://*.geevisit.com https://*.gsensebot.com";
+
   const CSP = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://static.geetest.com",
+    `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com ${GEETEST_DOMAINS}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob: ${GEETEST_DOMAINS}`,
     "font-src 'self' data:",
-    "media-src 'self' blob:",
-    "connect-src 'self' https://static.cloudflareinsights.com https://gcaptcha4.geetest.com",
+    `media-src 'self' blob: ${GEETEST_DOMAINS}`,
+    `connect-src 'self' https://static.cloudflareinsights.com ${GEETEST_DOMAINS}`,
+    `frame-src ${GEETEST_DOMAINS}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
