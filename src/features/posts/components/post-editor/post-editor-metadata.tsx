@@ -45,13 +45,13 @@ export function PostEditorTitle({
   onPostChange: (updates: Partial<PostEditorData>) => void;
 }) {
   return (
-    <div className="mb-12">
+    <div className="mb-6">
       <TextareaAutosize
         value={post.title}
         onChange={(e) => onPostChange({ title: e.target.value })}
         minRows={1}
         placeholder={m.editor_title_placeholder()}
-        className="w-full resize-none overflow-hidden border-none bg-transparent p-0 text-4xl font-medium leading-[1.2] tracking-tight text-foreground transition-all placeholder:text-muted-foreground/20 focus:outline-none md:text-6xl font-serif"
+        className="w-full resize-none overflow-hidden border-none bg-transparent p-0 text-xl font-medium leading-snug tracking-tight text-foreground transition-all placeholder:text-muted-foreground/30 focus:outline-none"
       />
     </div>
   );
