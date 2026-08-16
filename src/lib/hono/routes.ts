@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { exportDownloadRoute } from "@/features/import-export/api/hono/download.route";
+import { backupRoute } from "@/features/backup/api/backup.route";
 import { handleImageRequest } from "@/features/media/service/media.service";
 import {
   buildWatermarkSvg,
@@ -204,6 +205,9 @@ app.post(
 
 // Admin export download route
 app.route("/api/admin/export", exportDownloadRoute);
+
+// Admin backup route（全量备份/恢复）
+app.route("/api/admin/backup", backupRoute);
 
 // 下载中转：外链（网盘等）点击后由后台校验权限并 302 跳真实地址，真实链接不进前端
 app.route("/dl", resourceDownloadRedirectRoute);

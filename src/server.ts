@@ -1,6 +1,8 @@
 import { handleQueueBatch } from "@/lib/queue/queue.handler";
 
 export { CommentModerationWorkflow } from "@/features/comments/workflows/comment-moderation";
+export { BackupWorkflow } from "@/features/backup/workflows/backup.workflow";
+export { RestoreWorkflow } from "@/features/backup/workflows/restore.workflow";
 export { ExportWorkflow } from "@/features/import-export/workflows/export.workflow";
 export { ImportWorkflow } from "@/features/import-export/workflows/import.workflow";
 export { PostAutoSnapshotWorkflow } from "@/features/posts/workflows/post-auto-snapshot";

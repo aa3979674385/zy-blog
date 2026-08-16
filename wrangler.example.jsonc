@@ -83,6 +83,16 @@
       "name": "import-workflow",
       "binding": "IMPORT_WORKFLOW",
       "class_name": "ImportWorkflow"
+    },
+    {
+      "name": "backup-workflow",
+      "binding": "BACKUP_WORKFLOW",
+      "class_name": "BackupWorkflow"
+    },
+    {
+      "name": "restore-workflow",
+      "binding": "RESTORE_WORKFLOW",
+      "class_name": "RestoreWorkflow"
     }
   ],
   "durable_objects": {
@@ -184,6 +194,16 @@
           "name": "import-workflow",
           "binding": "IMPORT_WORKFLOW",
           "class_name": "ImportWorkflow"
+        },
+        {
+          "name": "backup-workflow",
+          "binding": "BACKUP_WORKFLOW",
+          "class_name": "BackupWorkflow"
+        },
+        {
+          "name": "restore-workflow",
+          "binding": "RESTORE_WORKFLOW",
+          "class_name": "RestoreWorkflow"
         }
       ],
       "queues": {

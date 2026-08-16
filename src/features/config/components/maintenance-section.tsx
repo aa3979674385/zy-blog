@@ -1,5 +1,6 @@
 import { CacheMaintenance } from "@/features/cache/components/cache-maintenance";
 import { BackupRestoreSection } from "@/features/import-export/components/backup-restore-section";
+import { FullBackupSection } from "@/features/backup/components/full-backup-section";
 import { AutoSnapshotSettings } from "@/features/posts/components/admin/auto-snapshot-settings";
 import { SearchMaintenance } from "@/features/search/components/search-maintenance";
 import { VersionMaintenance } from "@/features/version/components/version-maintenance";
@@ -23,6 +24,10 @@ export function MaintenanceSection() {
 
       <div className="pt-4 border-t border-border/20">
         <BackupRestoreSection />
+      </div>
+
+      <div className="pt-4 border-t border-border/20">
+        <FullBackupSection />
       </div>
     </div>
   );
