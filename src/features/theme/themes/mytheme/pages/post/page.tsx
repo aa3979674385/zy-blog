@@ -7,6 +7,7 @@ import type { PostPageProps } from "@/features/theme/contract/pages";
 // 因此改用本主题的显式路径（与 fuwari 主题写法一致），避免 TS2724。
 import { FuwariCommentSection } from "@/features/theme/themes/mytheme/components/comments/view/comment-section";
 import { SidebarDownloadBox } from "@/features/post-resources/components/public/sidebar-download-box";
+import { TestedBadge } from "@/features/theme/themes/mytheme/components/tested-badge";
 import { authClient } from "@/lib/auth/auth.client";
 import { m } from "@/paraglide/messages";
 import { formatDate } from "@/lib/utils";
@@ -44,6 +45,8 @@ export function PostPage({ post }: PostPageProps) {
                 <ClientOnly fallback="-">{formatDate(post.publishedAt)}</ClientOnly>
               </span>
             </div>
+            {/* 亲自测试状态徽章：位于发布时间之后、分类之前 */}
+            <TestedBadge tested={post.isTested} />
             {/* Category */}
             {post.categories && post.categories.length > 0 && (
               <div className="flex items-center">

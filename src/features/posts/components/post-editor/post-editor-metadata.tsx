@@ -227,6 +227,29 @@ export function PostEditorMetadata({
             </button>
           </div>
         </div>
+
+        <div className="space-y-2">
+          <FieldLabel>亲自测试</FieldLabel>
+          <div className="flex items-center gap-4">
+            {([1, 0] as const).map((val) => (
+              <button
+                key={String(val)}
+                type="button"
+                onClick={() => onPostChange({ isTested: val })}
+                className={`
+                  text-[10px] font-mono uppercase tracking-wider transition-colors
+                  ${
+                    post.isTested === val
+                      ? "border-b border-foreground font-bold text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                {val === 1 ? "已测试" : "未测试"}
+              </button>
+            ))}
+          </div>
+        </div>
       </MetadataSection>
 
       {/* 模块 2：链接 · 分类 · 标签 */}

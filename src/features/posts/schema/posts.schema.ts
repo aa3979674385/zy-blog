@@ -21,6 +21,9 @@ export const PostSelectSchema = createSelectSchema(PostsTable, {
   updatedAt: coercedDate,
   // 封面图字段在某些查询/缓存中可能缺失，显式允许 undefined，避免详情页 parse 崩溃。
   coverImage: z.string().nullable().optional(),
+  // 亲自测试状态：迁移脚本执行前 DB 行可能暂无该列，select 结果为 undefined；
+  // 用 nullable+optional 兜底，避免迁移未应用时详情/列表接口 parse 失败。
+  isTested: z.number().int().nullable().optional(),
 }).omit({
   publicContentJson: true,
 });

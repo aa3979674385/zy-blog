@@ -31,6 +31,7 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
     contentJson: initialData.contentJson ?? null,
     publishedAt: initialData.publishedAt,
     pinnedAt: initialData.pinnedAt,
+    isTested: initialData.isTested,
     tagIds: initialData.tagIds,
     categoryIds: initialData.categoryIds,
     coverImage: initialData.coverImage ?? null,
@@ -143,6 +144,7 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
           ? new Date(snapshot.publishedAt)
           : null,
         pinnedAt: post.pinnedAt,
+        isTested: post.isTested ?? 0,
         tagIds: snapshot.tagIds,
         categoryIds: post.categoryIds,
         coverImage: post.coverImage,

@@ -3,6 +3,7 @@ import { Calendar, Crown, Folder, ImageIcon, Lock, Unlock, User } from "lucide-r
 import type { PostItem } from "@/features/posts/schema/posts.schema";
 import { formatDate } from "@/lib/utils";
 import { postSegment } from "@/lib/post-url";
+import { TestedBadge } from "./tested-badge";
 
 interface GridPostCardProps {
   post: PostItem;
@@ -127,9 +128,10 @@ export function GridPostCard({ post, showPinned = true }: GridPostCardProps) {
         </h3>
       </Link>
 
-      {/* 元信息行：收费状态（左）+ 发布时间（靠最右） */}
+      {/* 元信息行：收费状态（左）+ 亲自测试 + 发布时间（靠最右） */}
       <div className="flex flex-wrap items-center justify-between gap-x-2.5 gap-y-1 px-1 text-xs text-(--fuwari-meta)">
         <AccessBadge type={post.accessType} />
+        <TestedBadge tested={post.isTested} />
         {dateText && (
           <span className="inline-flex items-center gap-1">
             <Calendar size={12} strokeWidth={1.8} />
