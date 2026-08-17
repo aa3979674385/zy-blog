@@ -137,6 +137,7 @@ function EditPost() {
     tagIds: tags.map((t) => t.id),
     categoryIds: categories.map((c) => c.id),
     pinnedAt: post.pinnedAt,
+    isTested: post.isTested ?? 0,
     coverImage: post.coverImage ?? null,
     isSynced: post.isSynced,
     hasPublicCache: post.hasPublicCache,
