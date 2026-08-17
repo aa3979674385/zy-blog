@@ -435,7 +435,6 @@ function PlansView() {
   const [result, setResult] = useState<RedeemResult | null>(null);
 
   const {
-    isPending: tsPending,
     reset: resetTurnstile,
     turnstileProps,
     activate: activateCaptcha,
@@ -598,7 +597,9 @@ function PlansView() {
             </label>
             <button
               type="submit"
-              disabled={redeemMut.isPending || tsPending}
+              // 极验弹窗模式：验证码在点击提交后由 ensureVerified() 触发，
+              // 不能用 tsPending 禁用按钮，否则永远弹不出验证框。
+              disabled={redeemMut.isPending}
               className="fuwari-btn-primary inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg font-medium disabled:opacity-50"
             >
               {redeemMut.isPending && <Loader2 size={16} className="animate-spin" />}
