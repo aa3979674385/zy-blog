@@ -310,3 +310,39 @@
 .dark ::-webkit-scrollbar-thumb:active {
   background-color: rgba(255, 255, 255, 0.6);
 }
+
+/* ===== View Transitions：页面切换过渡（配合 mytheme.viewTransition=true） =====
+   三要素：① 全局开关已开；② 命名元素在源/目标页成对出现才会「变形」；
+   ③ 这里抛光 root 交叉淡入。命名元素（post-title-/user-avatar）由浏览器
+   自动单独做位移/缩放变形，不受以下 root 动画影响。 */
+::view-transition-old(root) {
+  animation: vt-fade-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 主题切换（ThemeToggle）使用自己的圆形扩散动画，关掉 root 交叉淡入避免打架 */
+.theme-transition::view-transition-old(root),
+.theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* 尊重「减少动效」偏好：完全关闭过渡动画 */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

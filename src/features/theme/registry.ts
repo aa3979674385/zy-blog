@@ -25,6 +25,6 @@ export const themes: Record<ThemeName, ThemeRouterConfig> = {
   },
   mytheme: {
     viewTransition: true,
-    pendingMs: 1000,
+    pendingMs: 0,
   },
 };

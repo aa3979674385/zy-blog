@@ -384,9 +384,13 @@ export function Navbar({
                       src={user.image}
                       alt={user.name}
                       className="w-8 h-8 rounded-md object-cover"
+                      style={{ viewTransitionName: "user-avatar" }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-(--fuwari-btn-regular-bg) flex items-center justify-center">
+                    <div
+                      className="w-full h-full bg-(--fuwari-btn-regular-bg) flex items-center justify-center"
+                      style={{ viewTransitionName: "user-avatar" }}
+                    >
                       <UserIcon
                         size={18}
                         strokeWidth={1.25}

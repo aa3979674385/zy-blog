@@ -119,7 +119,10 @@ export function GridPostCard({ post, showPinned = true }: GridPostCardProps) {
             <User size={16} strokeWidth={2} />
           )}
         </span>
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-(--fuwari-title) group-hover:text-(--fuwari-primary)">
+        <h3
+          className="line-clamp-2 text-base font-semibold leading-snug text-(--fuwari-title) group-hover:text-(--fuwari-primary)"
+          style={{ viewTransitionName: `post-title-${post.slug}` }}
+        >
           {post.title}
         </h3>
       </Link>

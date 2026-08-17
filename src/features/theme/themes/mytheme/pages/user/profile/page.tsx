@@ -24,7 +24,6 @@ export function ProfilePage({
       >
         <div
           className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-(--fuwari-card-bg) bg-(--fuwari-btn-regular-bg) shadow-md relative mb-4"
-          style={{ viewTransitionName: "user-avatar" }}
         >
           {user.image ? (
             <img
