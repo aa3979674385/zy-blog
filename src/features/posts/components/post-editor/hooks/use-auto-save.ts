@@ -43,6 +43,7 @@ export function useAutoSave({
     tagIds: string; // Serialize for easy comparison
     categoryIds: string; // Serialize for easy comparison
     coverImage: string | null;
+    isTested: number | null;
     contentRef: PostEditorData["contentJson"];
   } | null>(null);
   // Store onSave in ref to avoid effect re-running when onSave reference changes
@@ -62,6 +63,7 @@ export function useAutoSave({
     tagIds: [...p.tagIds].sort().join(","),
     categoryIds: [...p.categoryIds].sort().join(","),
     coverImage: p.coverImage ?? null,
+    isTested: p.isTested ?? null,
     contentRef: p.contentJson,
   });
 
@@ -79,6 +81,7 @@ export function useAutoSave({
       prev.tagIds !== curr.tagIds ||
       prev.categoryIds !== curr.categoryIds ||
       prev.coverImage !== curr.coverImage ||
+      prev.isTested !== curr.isTested ||
       prev.contentRef !== curr.contentRef
     );
   };
