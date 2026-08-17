@@ -108,6 +108,7 @@ export async function getPosts(
     pinnedAt: PostsTable.pinnedAt,
     createdAt: PostsTable.createdAt,
     updatedAt: PostsTable.updatedAt,
+    isTested: PostsTable.isTested,
   });
 
   // 按分类过滤时关联 post_categories（保证分页在过滤后生效）
@@ -289,6 +290,7 @@ export async function getPostsCursor(
       createdAt: PostsTable.createdAt,
       updatedAt: PostsTable.updatedAt,
       coverImage: PostsTable.coverImage,
+      isTested: PostsTable.isTested,
     })
     .from(PostsTable)
     .$dynamic();
@@ -482,6 +484,7 @@ export async function getPostsPaged(
       createdAt: PostsTable.createdAt,
       updatedAt: PostsTable.updatedAt,
       coverImage: PostsTable.coverImage,
+      isTested: PostsTable.isTested,
     })
     .from(PostsTable)
     .$dynamic();
@@ -1024,6 +1027,7 @@ export async function getPublicPostsByIds(db: DB, ids: Array<number>) {
       createdAt: PostsTable.createdAt,
       updatedAt: PostsTable.updatedAt,
       coverImage: PostsTable.coverImage,
+      isTested: PostsTable.isTested,
     })
     .from(PostsTable)
     .where(and(inArray(PostsTable.id, ids), whereClause));
