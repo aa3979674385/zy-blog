@@ -15,7 +15,7 @@ import {
   buildCanonicalUrl,
   canonicalLink,
 } from "@/lib/seo";
-import { postPath } from "@/lib/post-url";
+import { postPath, decodeSegment } from "@/lib/post-url";
 
 const searchSchema = z.object({
   highlightCommentId: z.coerce.number().optional(),
@@ -34,7 +34,7 @@ const { relatedPostsLimit } = theme.config.post;
  * 末尾 .html 在此统一剥掉。
  */
 function primaryPostQuery(segment: string) {
-  const clean = segment.replace(/\.html$/i, "");
+  const clean = decodeSegment(segment).replace(/\.html$/i, "");
   const idNum = Number(clean);
   const isNumeric = Number.isInteger(idNum) && idNum > 0;
   if (isNumeric) return postByIdPublicQuery(idNum);
@@ -52,7 +52,7 @@ export async function loadPostBySegment(
   queryClient: QueryClient,
   segment: string,
 ): Promise<PostWithToc | null> {
-  const clean = segment.replace(/\.html$/i, "");
+  const clean = decodeSegment(segment).replace(/\.html$/i, "");
   const idNum = Number(clean);
   const isNumeric = Number.isInteger(idNum) && idNum > 0;
 

@@ -120,11 +120,11 @@ export async function insertCategory(
   db: DB,
   data: typeof CategoriesTable.$inferInsert,
 ) {
-  const result = await db.insert(CategoriesTable).values(data).returning();
-  const category = (result as unknown as {
-    results: (typeof CategoriesTable.$inferSelect)[];
-  }).results[0];
-  return category ?? undefined;
+  const [category] = await db
+    .insert(CategoriesTable)
+    .values(data)
+    .returning();
+  return category;
 }
 
 /**

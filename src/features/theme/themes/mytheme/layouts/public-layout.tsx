@@ -2,6 +2,7 @@ import { useRouterState, useRouteContext } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { decodeSegment } from "@/lib/post-url";
 import type { PublicLayoutProps } from "@/features/theme/contract/layouts";
 import { postBySlugQuery, postByIdPublicQuery } from "@/features/posts/queries";
 import { SidebarDownloadBox } from "@/features/post-resources/components/public/sidebar-download-box";
@@ -56,7 +57,7 @@ export function PublicLayout({
   // 段落为数字时走「按 id 取」（id 模式），否则按 slug 取——与详情页 $slug.tsx 的解析逻辑一致，
   // 否则 id 模式下用 "123" 当 slug 去查会查不到，导致桌面端下载模块不渲染。
   const rawSegment = isPostPage ? pathname.slice("/post/".length) : "";
-  const segment = rawSegment.replace(/\.html$/i, "");
+  const segment = decodeSegment(rawSegment).replace(/\.html$/i, "");
   const idNum = Number(segment);
   const isNumeric = Number.isInteger(idNum) && idNum > 0;
   const { data: sidebarPost } = useQuery({

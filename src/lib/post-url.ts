@@ -28,6 +28,23 @@ export function getPostUrlSuffix(): PostUrlMode {
 export type PostRef = { id?: number | string | null; slug: string };
 
 /**
+ * 安全解码路由段落。
+ *
+ * 链接生成时 slug 经过 encodeURIComponent（见 postSegment / postPath），因此 URL 里的
+ * 段落是编码串（如 /post/%E6%88%91….html）。客户端跳转时路由会自动解码，但直接刷新
+ * （SSR）拿到的 params.slug / pathname 仍是编码串。把它解码后才能和数据库里存的原生
+ * slug 对上，否则中文 slug + 后缀链接刷新会 404、侧边栏也查不到文章导致下载模块不渲染。
+ * 用 try/catch 兜底畸形 % 序列，避免硬崩。
+ */
+export function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+/**
  * 把文章 id 统一规整成正整数（兼容 number / 字符串数字 / 空值）。
  * 搜索结果、会员中心等场景拿到的 id 可能是字符串，需要归一化后才能在 id 模式下正确拼 URL。
  */
