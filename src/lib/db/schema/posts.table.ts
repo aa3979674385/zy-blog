@@ -27,8 +27,8 @@ export const PostsTable = sqliteTable(
     /** 文章封面图（可选）。留空时由后端自动从正文第一张图抓取作为兜底。 */
     coverImage: text("cover_image"),
     status: text("status", { enum: POST_STATUSES }).notNull().default("draft"),
-    /** 是否亲自测试过：1=已测试，0=未测试（默认） */
-    isTested: integer("is_tested").notNull().default(0),
+    /** 亲自测试状态：1=已测试，0=未测试，null=不显示（默认，相当于关闭该功能） */
+    isTested: integer("is_tested"),
     publishedAt: integer("published_at", { mode: "timestamp" }),
     pinnedAt: integer("pinned_at", { mode: "timestamp" }),
     createdAt,

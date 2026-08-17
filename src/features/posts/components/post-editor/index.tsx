@@ -144,7 +144,7 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
           ? new Date(snapshot.publishedAt)
           : null,
         pinnedAt: post.pinnedAt,
-        isTested: post.isTested ?? 0,
+        isTested: post.isTested ?? null,
         tagIds: snapshot.tagIds,
         categoryIds: post.categoryIds,
         coverImage: post.coverImage,

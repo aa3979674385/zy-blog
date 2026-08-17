@@ -231,7 +231,7 @@ export function PostEditorMetadata({
         <div className="space-y-2">
           <FieldLabel>亲自测试</FieldLabel>
           <div className="flex items-center gap-4">
-            {([1, 0] as const).map((val) => (
+            {([null, 1, 0] as const).map((val) => (
               <button
                 key={String(val)}
                 type="button"
@@ -245,7 +245,7 @@ export function PostEditorMetadata({
                   }
                 `}
               >
-                {val === 1 ? "已测试" : "未测试"}
+                {val === null ? "不显示" : val === 1 ? "已测试" : "未测试"}
               </button>
             ))}
           </div>
