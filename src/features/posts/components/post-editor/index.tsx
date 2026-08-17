@@ -5,6 +5,7 @@ import { History, Loader2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Editor } from "@/components/tiptap-editor";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { extensions } from "@/features/posts/editor/config";
 import type { PostRevisionSnapshot } from "@/features/posts/schema/post-revisions.schema";
@@ -230,18 +231,24 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
               </Button>
             </div>
 
-            <PostEditorTitle post={post} onPostChange={handlePostChange} />
+            {/* Title Card */}
+            <Card className="rounded-xl border border-border/30 bg-card p-6 shadow-sm mb-6">
+              <PostEditorTitle post={post} onPostChange={handlePostChange} />
+            </Card>
 
-            {/* Editor Area */}
-            <div className="min-h-[60vh] pb-32">
-              <Editor
-                key={editorRenderKey}
-                extensions={extensions}
-                content={post.contentJson ?? ""}
-                onChange={handleContentChange}
-                onCreated={setEditorInstance}
-              />
-            </div>
+            {/* Editor Card */}
+            <Card className="rounded-xl border border-border/30 bg-card p-0 shadow-sm overflow-hidden">
+              {/* Editor Area */}
+              <div className="min-h-[60vh] pb-32">
+                <Editor
+                  key={editorRenderKey}
+                  extensions={extensions}
+                  content={post.contentJson ?? ""}
+                  onChange={handleContentChange}
+                  onCreated={setEditorInstance}
+                />
+              </div>
+            </Card>
 
             <PostResourcePanel
               postId={initialData.id}
