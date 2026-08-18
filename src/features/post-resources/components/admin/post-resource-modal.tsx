@@ -46,10 +46,10 @@ const EMPTY = {
   title: "",
   extractCode: "",
   links: [{ type: "百度网盘", url: "", password: "" }] as LinkRow[],
-  accessType: "free" as "free" | "member" | "paid",
+  accessType: "paid" as "free" | "member" | "paid",
   priceType: "points" as "points" | "credits",
-  priceInput: "",
-  memberAccess: "none" as "none" | "free" | "required" | "discount",
+  priceInput: "2",
+  memberAccess: "free" as "none" | "free" | "required" | "discount",
   memberDiscount: 10,
 };
 
