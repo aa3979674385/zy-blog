@@ -3,10 +3,12 @@ export const ADMIN_ITEMS_PER_PAGE = 12;
 export const CACHE_CONTROL = {
   public: {
     "Cache-Control": "public, max-age=0, must-revalidate",
-    // 公共页面 HTML 的 CDN 缓存：原来 s-maxage=31536000（1 年），部署新版本后
-    // CDN 仍返回旧 HTML、引用已变更的 chunk → 404 → 水合失败 → 导航等交互全失效。
-    // 改为 60 秒 + SWR 1 小时：内容快速可见更新，配合 x-blog-build-id 版本校验兜底。
-    "CDN-Cache-Control": "public, s-maxage=60, stale-while-revalidate=3600",
+    // 公共页面 HTML 的 CDN 缓存：对齐上游 flare-stack-blog / dukda（s-maxage=31536000，缓存 1 年）。
+    // 之所以能安全用 1 年（而非之前的 60 秒）：静态资源是内容哈希 + immutable 长缓存，
+    // 旧 HTML 引用的旧 chunk 文件在 CDN 中始终存在、不会 404；且本 fork 自带 x-blog-build-id
+    // 版本校验，会在构建一变时作废 Worker 内层缓存。代价：部署后需主动 purge CDN 缓存，
+    // 否则用户最多要等 1 年才自然看到新页面（详见 README「部署指南」）。
+    "CDN-Cache-Control": "public, s-maxage=31536000",
   },
   swr: {
     "Cache-Control": "public, max-age=0, must-revalidate",

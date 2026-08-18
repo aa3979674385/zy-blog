@@ -299,6 +299,17 @@ git clone https://github.com/aa3979674385/flare-stack-blog.git
 | `UMAMI_SRC`               | 运行时 | Umami 客户端埋点代理 URL                                                                                  |
 | `VITE_UMAMI_WEBSITE_ID`   | 构建时 | Umami Website ID（客户端埋点）                                                                            |
 
+#### ⚠️ 公共页面已改为 CDN 长缓存（s-maxage=1 年），部署后必须 purge
+
+本项目公共页面 HTML 的 CDN 边缘缓存已对齐上游设为 **1 年**（`src/lib/constants.ts` 的 `CACHE_CONTROL.public`）。好处：访客几乎都从离自己最近的边缘节点秒取页面、极少回源，首屏极快；代价：**部署新版本（改了 HTML / JS chunk）后，旧的缓存 HTML 最多要 1 年才自然失效**。
+
+所以请确保以下任一 purge 机制在每次部署后生效：
+
+- **用 GitHub Actions 部署（推荐）**：`deploy.yml` 已在 `wrangler deploy` 之后自动调用 Cloudflare `purge_cache`（按域名前缀清），新版本即时生效，无需手动操作。
+- **手动 `wrangler deploy`（未走 Actions）**：部署后请到后台「设置 → 清除 CDN 缓存」点一次，或在 Cloudflare 控制台手动 purge；否则线上最长要等 1 年才看到更新。
+
+> 平时发布文章、改配置、加友链等，系统已自动按 URL purge 对应页面（`src/lib/invalidate.ts`），与上面的部署级 purge 互补，无需担心。
+
 ---
 
 ## 本地开发
