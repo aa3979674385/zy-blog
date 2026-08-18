@@ -155,6 +155,10 @@ export async function handleImageRequest(
     object.writeHttpMetadata(headers);
     headers.set("Content-Type", contentType);
     headers.set("ETag", object.httpEtag);
+    // 原图（UUID key 天然版本化）下发长期边缘缓存，避免每次回源 R2
+    Object.entries(CACHE_CONTROL.immutable).forEach(([k, v]) => {
+      headers.set(k, v);
+    });
 
     return new Response(object.body, { headers });
   };
@@ -200,6 +204,16 @@ export async function handleImageRequest(
     searchParams,
     request.headers.get("Accept") || "",
   );
+
+  // 未显式指定尺寸时，默认按 1200 宽缩略（封面/内嵌图无需原图尺寸），
+  // 既大幅减小体积（配合下方 immutable 缓存），又不影响 ?original=true 直出原图。
+  if (
+    !searchParams.has("width") &&
+    !searchParams.has("height") &&
+    contentType !== "image/gif"
+  ) {
+    transformOptions.width = 1200;
+  }
 
   // 3. 叠加水印（后台配置开启时；站点资产 asset/ 路径不加水印，避免水印图自身被递归处理）
   const draw = isAsset ? undefined : buildWatermarkDraw(watermark, url.origin);
