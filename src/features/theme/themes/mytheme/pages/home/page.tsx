@@ -170,7 +170,7 @@ function HomeTabsView({
 
   return (
     <div className="flex flex-col gap-6">
-      {tabs.length > 1 && (
+      {tabs.length > 0 && (
         <div className="flex items-center gap-4">
           <CategoryTabs
             tabs={tabs}
