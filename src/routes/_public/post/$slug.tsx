@@ -9,6 +9,7 @@ import { PostPageSkeleton } from "@theme/pages/post/skeleton";
 import { z } from "zod";
 import { siteConfigQuery, siteDomainQuery } from "@/features/config/queries";
 import { postBySlugQuery, relatedPostsQuery, popularPostsQuery, postByIdPublicQuery } from "@/features/posts/queries";
+import { publicPostResourcesQuery } from "@/features/post-resources/queries";
 import type { PostWithToc } from "@/features/posts/schema/posts.schema";
 import {
   buildArticleJsonLd,
@@ -112,6 +113,14 @@ export const Route = createFileRoute("/_public/post/$slug")({
     );
 
     if (!post) throw notFound();
+
+    // 下载资源：SSR 预取，详情页 / 右侧栏下载模块首屏即出，不必等客户端二次回查。
+    // 与「热门文章」同一机制（loader 内 ensureQueryData → dehydrated cache → 水合即渲染）。
+    await context.queryClient
+      .ensureQueryData(publicPostResourcesQuery(post.id))
+      .catch((err) => {
+        console.error("[loader] 预取下载资源失败（不影响文章主体）", err);
+      });
 
     return {
       post,

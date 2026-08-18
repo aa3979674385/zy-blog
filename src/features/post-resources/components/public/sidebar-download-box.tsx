@@ -64,6 +64,23 @@ type DialogState = {
  *      - 未登录 / 会员专享 / 收费未解锁：对应状态卡片（点击下载按钮弹确认框，不直接扣费）
  *   4. 底部 💡 提示条（该资源有解压码时显示）
  */
+// ─── 加载骨架：模块区域占位，避免加载期间整块空白 ───
+function DownloadSkeleton() {
+  return (
+    <div className="fuwari-card-base overflow-hidden">
+      <div className="sidebar-flow-bar h-[42px] rounded-t-xl opacity-60" />
+      <div className="p-3 space-y-3">
+        <div className="h-5 w-24 mx-auto rounded-full bg-muted animate-pulse" />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="h-10 rounded-lg bg-muted animate-pulse" />
+          <div className="h-10 rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="h-9 w-full rounded-lg bg-muted animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 export function SidebarDownloadBox({
   postId,
   postTitle,
@@ -85,7 +102,12 @@ export function SidebarDownloadBox({
   });
   const { copy } = useCopy();
 
-  if (isLoading || !resources || resources.length === 0) return null;
+  // 加载中先渲染骨架占位（模块区域始终可见），加载完成且确实无资源才隐藏。
+  // 避免「页面未完全加载 → 下载模块整块不渲染」的问题。
+  if (!resources || resources.length === 0) {
+    if (isLoading) return <DownloadSkeleton />;
+    return null;
+  }
 
   // 每日下载配额（前端拦截用）
   const isQuotaLoaded = !!quota;
