@@ -85,8 +85,18 @@ export const Route = createFileRoute("/_public/post/$slug")({
     // 1. Critical: Main post data - use serverFn (executes directly on server, no HTTP)
     const [post, domain, siteConfig] = await Promise.all([
       loadPostBySegment(context.queryClient, params.slug),
-      context.queryClient.ensureQueryData(siteDomainQuery),
-      context.queryClient.ensureQueryData(siteConfigQuery),
+      // 站点域名：单个 serverFn 偶发失败不应阻断文章页导航，失败时回退到缓存。
+      context.queryClient
+        .ensureQueryData(siteDomainQuery)
+        .catch(() =>
+          context.queryClient.getQueryData(siteDomainQuery.queryKey) ?? undefined,
+        ),
+      // 站点配置：同上，单个失败不应阻断文章页导航。
+      context.queryClient
+        .ensureQueryData(siteConfigQuery)
+        .catch(() =>
+          context.queryClient.getQueryData(siteConfigQuery.queryKey) ?? undefined,
+        ),
       // 热门文章：SSR 预取，整页刷新时客户端直接水合、不再重新请求后端
       context.queryClient
         .ensureQueryData(popularPostsQuery(5))
@@ -105,8 +115,8 @@ export const Route = createFileRoute("/_public/post/$slug")({
 
     return {
       post,
-      authorName: siteConfig.author,
-      canonicalHref: buildCanonicalUrl(domain, postPath(post)),
+      authorName: siteConfig?.author,
+      canonicalHref: buildCanonicalUrl(domain ?? "", postPath(post)),
     };
   },
   head: ({ loaderData }) => {

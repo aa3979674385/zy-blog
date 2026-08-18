@@ -21,11 +21,15 @@ export const systemConfigQuery = queryOptions({
 export const siteConfigQuery = queryOptions({
   queryKey: CONFIG_KEYS.site,
   queryFn: () => getSiteConfigFn(),
+  // 站点配置几乎不变：拉长生效时间，避免每次客户端跳转都重打 serverFn
+  // （serverFn 偶发失败/超时会让整次导航卡在 pending 转圈、最终不跳转）。
+  staleTime: 5 * 60 * 1000,
 });
 
 export const siteDomainQuery = queryOptions({
   queryKey: CONFIG_KEYS.siteDomain,
   queryFn: () => getSiteDomainFn(),
+  staleTime: 5 * 60 * 1000,
 });
 
 export const pointConfigQuery = queryOptions({

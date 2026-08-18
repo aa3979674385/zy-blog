@@ -28,8 +28,14 @@ interface MyRouterContext {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async ({ context, location }) => {
+    // 站点配置：单个 serverFn 偶发失败/超时不应阻断整次导航（否则全站跳转卡在
+    // pending 转圈、最终不跳转）。失败时回退到已有缓存，组件层 useQuery 会自愈。
     const siteConfig =
-      await context.queryClient.ensureQueryData(siteConfigQuery);
+      await context.queryClient
+        .ensureQueryData(siteConfigQuery)
+        .catch(() =>
+          context.queryClient.getQueryData(siteConfigQuery.queryKey) ?? null,
+        );
 
     // 文章 URL 格式开关：在渲染任何子路由（含文章详情页 <Link>）之前写入，
     // 保证链接生成与路由解析都能同步读到当前模式。

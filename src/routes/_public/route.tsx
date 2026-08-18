@@ -16,7 +16,15 @@ export const Route = createFileRoute("/_public")({
     // 预取导航数据：让 SSR 首屏就渲染出真实导航菜单。
     // 否则组件里的 useQuery(navMenuQuery) 在服务端处于 pending（空壳 <nav>），
     // 客户端注水后才有数据 → 全站水合不匹配 (#418)。
-    await context.queryClient.ensureQueryData(navMenuQuery);
+    // 注意：单个查询失败不应阻断整次导航（否则全站跳转卡在 pending），用 catch 兜底。
+    await context.queryClient
+      .ensureQueryData(navMenuQuery)
+      .catch((err) => {
+        console.error(
+          "[loader] 预取导航菜单失败（不影响页面渲染，组件会自愈）",
+          err,
+        );
+      });
     return {
       preloadImages: getThemePreloadImages(context.siteConfig),
     };
