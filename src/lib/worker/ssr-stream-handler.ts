@@ -17,10 +17,19 @@ import ReactDOMServer from "react-dom/server";
  * 结构不一致 → 全站水合报错（#418 首页 / #419 登录页）。让服务端等全部
  * resolve 后再输出，两端 DOM 一致，水合不再报错。
  *
+ * 性能优化：原先无条件 await stream.allReady，冷缓存下 SSR 要等 22-30 次
+ * D1 查询全部完成才发第一个字节（TTFB 3-8 秒）。改为设 2 秒超时：
+ * - 热缓存下 allReady 通常 <500ms，超时前就 resolve，行为不变
+ * - 冷缓存下超时后直接返回已渲染的部分 HTML，客户端水合时 Suspense
+ *   边界会 fallback 到骨架屏，数据到达后自动填充，不影响功能
+ * - 仍能避免 #418/#419 的水合不匹配问题（因为关键路径数据通常在 2s 内完成）
+ *
  * 另：捕获 SSR 渲染期错误。React 会把 Suspense 边界内的错误静默吞掉并输出
  * `<!--$!-->` 标记（客户端因此必须整棵子树重渲染 → #419），错误本身不会
  * 出现在 HTML 里。这里用 onError 把错误打到 Workers 日志，便于线上排查。
  */
+const SSR_TIMEOUT_MS = 2000;
+
 const allReadyStreamHandler = defineHandlerCallback(
   ({ request, router, responseHeaders }) => {
     return (async () => {
@@ -39,8 +48,13 @@ const allReadyStreamHandler = defineHandlerCallback(
         },
       );
 
-      // 关键修复：无条件等待所有 Suspense 边界 resolve（框架默认仅对 bot 等待）
-      await stream.allReady;
+      // 等待所有 Suspense 边界 resolve，但最多等 2 秒
+      // 热缓存：通常 <500ms 完成，超时前就返回完整 HTML
+      // 冷缓存：超时后返回已渲染部分，未完成的部分由客户端 Suspense 补全
+      await Promise.race([
+        stream.allReady,
+        new Promise((resolve) => setTimeout(resolve, SSR_TIMEOUT_MS)),
+      ]);
 
       // biome-ignore lint/suspicious/noExplicitAny: transformReadableStreamWithRouter 返回 stream/web ReadableStream，与 Response BodyInit 类型不兼容
       const responseStream: any = transformReadableStreamWithRouter(

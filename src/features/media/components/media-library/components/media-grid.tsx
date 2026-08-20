@@ -1,6 +1,5 @@
 import { Check, FileText, Film, Image as ImageIcon } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
-import { getOptimizedImageUrl } from "@/features/media/utils/media.utils";
 import { formatBytes } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 import { useLongPress } from "../hooks/use-long-press";
@@ -39,7 +38,7 @@ const MediaCard = memo(
     selectionModeActive: boolean;
   }) => {
     const [isLoaded, setIsLoaded] = useState(false);
-    const thumbnailUrl = isImage ? getOptimizedImageUrl(asset.key) : undefined;
+    const thumbnailUrl = isImage ? `/images/${asset.key}` : undefined;
 
     const handleStandardClick = () => {
       // Direct preview on click unless in explicit selection mode (multi-select triggered by checkbox)

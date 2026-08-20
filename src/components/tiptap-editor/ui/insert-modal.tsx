@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { uploadImageWithWatermark } from "@/features/media/utils/upload-with-watermark.client";
 import { useMediaPicker } from "@/features/media/components/media-library/hooks";
 import type { MediaAsset } from "@/features/media/components/media-library/types";
-import { getOptimizedImageUrl } from "@/features/media/utils/media.utils";
 import { useDelayUnmount } from "@/hooks/use-delay-unmount";
 import { cn } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
@@ -64,7 +63,7 @@ const MediaItem = memo(
         )}
 
         <img
-          src={getOptimizedImageUrl(media.key)}
+          src={`/images/${media.key}`}
           alt={media.fileName}
           className={`w-full h-full object-cover transition-all duration-1000 ${
             isLoaded ? "opacity-100" : "opacity-0"

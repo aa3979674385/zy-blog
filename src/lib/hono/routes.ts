@@ -3,12 +3,6 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { handleImageRequest } from "@/features/media/service/media.service";
-import {
-  buildWatermarkSvg,
-  type WatermarkConfig,
-} from "@/features/media/utils/media.utils";
-import { getSystemConfig } from "@/features/config/service/config.service";
-import { getDb } from "@/lib/db";
 import postsDetailRoute from "@/features/posts/api/hono/posts.detail.route";
 import postsDetailByIdRoute from "@/features/posts/api/hono/posts.detail-by-id.route";
 import postsListRoute from "@/features/posts/api/hono/posts.list.route";
@@ -95,36 +89,6 @@ app.all("/api/send", async (c) => {
   return proxy(sendUrl, c.req);
 });
 
-// 文字水印图（SVG）。Cloudflare 的 draw.url 必须是可公开访问的绝对 URL，
-// 不支持 data: URI，所以这里把水印文字渲染成独立的 SVG 资源对外提供。
-app.get("/watermark.svg", async (c) => {
-  try {
-    const config = await getSystemConfig({
-      db: getDb(c.env),
-      env: c.env,
-      executionCtx: getExecutionContext(c),
-    });
-    const svg = buildWatermarkSvg(config.watermark);
-    if (!svg) return c.text("Watermark not configured", 404);
-
-    return new Response(svg, {
-      headers: {
-        "Content-Type": "image/svg+xml; charset=utf-8",
-        // 带 ?v= 版本号访问，可长缓存；配置变更后版本号会变
-        "Cache-Control": "public, max-age=86400",
-      },
-    });
-  } catch (error) {
-    console.error(
-      JSON.stringify({
-        message: "watermark svg build failed",
-        error: error instanceof Error ? error.message : String(error),
-      }),
-    );
-    return c.text("Watermark unavailable", 500);
-  }
-});
-
 app.get("/images/:key{.+}", async (c) => {
   const key = c.req.param("key");
 
@@ -137,19 +101,7 @@ app.get("/images/:key{.+}", async (c) => {
   }
 
   try {
-    // 读取水印配置（KV 缓存，7 天 TTL；读取失败时静默降级为无水印，不影响图片正常返回）
-    let watermark: WatermarkConfig | null | undefined;
-    try {
-      const config = await getSystemConfig({
-        db: getDb(c.env),
-        env: c.env,
-        executionCtx: getExecutionContext(c),
-      });
-      watermark = config.watermark;
-    } catch {
-      watermark = undefined;
-    }
-    return await handleImageRequest(c.env, key, c.req.raw, watermark);
+    return await handleImageRequest(c.env, key);
   } catch (error) {
     console.error(
       JSON.stringify({

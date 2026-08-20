@@ -24,8 +24,9 @@ export const Route = createFileRoute("/_public/")({
     const homeCategoryStyle =
       context.siteConfig?.theme?.mytheme?.homeCategoryStyle ?? "tabs";
 
-    // 1) 基础数据：置顶/热门/最近/pinned/popular + 分类列表（用于 tab label fallback）
-    const [, , , domain, publicCategories] = await Promise.all([
+    // 所有首页数据并行拉取——基础数据和分类 tab 同时启动，
+    // 不再串行等待第一批完成后才发第二批，总耗时从 sum 降为 max
+    const baseDataPromise = Promise.all([
       context.queryClient.ensureQueryData(recentPostsQuery(recentPostsLimit)),
       context.queryClient.ensureQueryData(pinnedPostsQuery),
       context.queryClient.ensureQueryData(popularPostsQuery(popularPostsLimit)),
@@ -33,18 +34,22 @@ export const Route = createFileRoute("/_public/")({
       context.queryClient.ensureQueryData(categoriesQueryOptions),
     ]);
 
-    // 2) 给每个分类 tab 拉对应的 top N 篇
-    const categoryNameById = new Map<number, string>();
-    for (const cat of publicCategories ?? []) {
-      categoryNameById.set(cat.id, cat.name);
-    }
-    const perCategoryPosts = await Promise.all(
+    const categoryPostsPromise = Promise.all(
       homeCategoryTabs.map((tab) =>
         context.queryClient.ensureQueryData(
           postsByCategoryQuery(tab.categoryId, tab.postLimit),
         ),
       ),
     );
+
+    const [, , , domain, publicCategories] = await baseDataPromise;
+    const perCategoryPosts = await categoryPostsPromise;
+
+    // 构建 categoryId -> name 映射（用于 tab displayName fallback）
+    const categoryNameById = new Map<number, string>();
+    for (const cat of publicCategories ?? []) {
+      categoryNameById.set(cat.id, cat.name);
+    }
 
     const categoryTabs: Array<HomeCategoryTabConfig> = homeCategoryTabs.map(
       (tab, idx) => ({

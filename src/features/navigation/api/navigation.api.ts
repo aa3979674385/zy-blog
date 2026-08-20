@@ -85,10 +85,8 @@ export const getNavMenuFn = createServerFn()
   .middleware([dbMiddleware])
   .handler(async ({ context }) => {
     const cfg = await ConfigService.getSystemConfig(context);
-    const categories = await CategoryService.getCategories(context, {
-      sortBy: "sortOrder",
-      sortDir: "asc",
-    });
+    // 改用 getPublicCategories：走 KV 缓存（7天TTL），避免每次 SSR 都查 D1
+    const categories = await CategoryService.getPublicCategories(context);
     const items = withSystemNavItems(
       validNavItems(cfg.navMenu ?? fallbackNavMenu()),
     );

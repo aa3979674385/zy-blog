@@ -209,6 +209,42 @@ export async function getVersioned<T extends z.ZodTypeAny>(
   return await get(context, keyForVersion(version), schema, fetcher, options);
 }
 
+/**
+ * 批量读取共享同一 namespace 的多条 versioned cache。
+ * 只读一次 KV 版本号，避免 N 条查询各自独立读版本号造成 N 次 KV 往返。
+ * 适用于首页 loader 同时拉取 recentPosts / pinnedPosts / popularPosts 等场景。
+ */
+export async function getVersionedBatch<T extends z.ZodTypeAny>(
+  context: BaseContext & { executionCtx: ExecutionContext },
+  namespace: CacheNamespace,
+  items: Array<{
+    keyForVersion: (version: string) => CacheKey;
+    schema: T;
+    fetcher: () => Promise<z.infer<T>>;
+    options?: { ttl?: Duration };
+  }>,
+): Promise<Array<z.infer<T>>> {
+  let version: string;
+  try {
+    version = await getVersion(context, namespace);
+  } catch {
+    // 版本号读取失败，全部回源
+    return Promise.all(items.map((item) => item.fetcher()));
+  }
+
+  return Promise.all(
+    items.map((item) =>
+      get(
+        context,
+        item.keyForVersion(version),
+        item.schema,
+        item.fetcher,
+        item.options ?? {},
+      ),
+    ),
+  );
+}
+
 export async function invalidateSiteCache(
   context: BaseContext & { executionCtx: ExecutionContext },
 ) {

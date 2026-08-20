@@ -54,14 +54,32 @@ const config = defineConfig(({ mode }) => {
         projects: ["./tsconfig.json"],
       }),
       tailwindcss(),
-      devtools(),
+      // DevTools 仅在开发环境加载，避免生产包增大
+      mode === "development" && devtools(),
       tanstackStart({
         importProtection: {
           enabled: false,
         },
       }),
       viteReact(),
-    ],
+    ].filter(Boolean),
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // 将大型第三方库拆分为独立 chunk，避免全部打入入口 JS
+            "vendor-react": ["react", "react-dom", "react/jsx-runtime"],
+            "vendor-router": [
+              "@tanstack/react-router",
+              "@tanstack/react-start",
+              "@tanstack/react-query",
+            ],
+            "vendor-auth": ["better-auth"],
+            "vendor-icons": ["lucide-react", "simple-icons"],
+          },
+        },
+      },
+    },
   };
 });
 

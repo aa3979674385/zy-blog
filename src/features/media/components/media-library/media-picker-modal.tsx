@@ -11,7 +11,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mediaInfiniteQueryOptions } from "@/features/media/queries";
 import type { MediaAsset } from "@/features/media/components/media-library/types";
-import { getOptimizedImageUrl } from "@/features/media/utils/media.utils";
 import { useDebounce } from "@/hooks/use-debounce";
 
 interface MediaPickerModalProps {
@@ -142,7 +141,7 @@ export function MediaPickerModal({
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/20 text-muted-foreground">
                     {media.mimeType.startsWith("image/") ? (
                       <img
-                        src={getOptimizedImageUrl(media.key)}
+                        src={`/images/${media.key}`}
                         alt={media.fileName}
                         className="h-full w-full object-cover"
                         loading="lazy"
