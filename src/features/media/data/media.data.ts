@@ -56,7 +56,10 @@ export async function getMediaList(
   }
   if (search) {
     const pattern = `%${escapeLikeString(search)}%`;
-    conditions.push(sql`${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\'`);
+    // 同时按文件名与 UUID key（存储键）模糊匹配，支持通过 UUID 查找媒体
+    conditions.push(
+      sql`(${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\' OR ${MediaTable.key} LIKE ${pattern} ESCAPE '\\'})`,
+    );
   }
 
   // 基础查询
