@@ -1,5 +1,6 @@
+// 使用 ! 作为 LIKE 转义字符（避免反斜杠与 SQL 单引号转义冲突导致语法错误）
 export function escapeLikeString(str: string) {
-  return str.replace(/[%_\\]/g, "\\$&");
+  return str.replace(/[%_!]/g, "!$&");
 }
 
 /**

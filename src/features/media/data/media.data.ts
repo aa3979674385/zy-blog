@@ -60,8 +60,9 @@ export async function getMediaList(
     if (normalized) {
       const pattern = `%${escapeLikeString(normalized)}%`;
       // 同时按文件名与 UUID key（存储键）模糊匹配，支持通过 UUID 查找媒体
+      // 使用 ! 作为 LIKE 转义字符（ESCAPE '!'），避免 ESCAPE '\' 在 SQLite 中因引号转义导致语法错误
       conditions.push(
-        sql`(${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\' OR ${MediaTable.key} LIKE ${pattern} ESCAPE '\\'})`,
+        sql`(${MediaTable.fileName} LIKE ${pattern} ESCAPE '!' OR ${MediaTable.key} LIKE ${pattern} ESCAPE '!'})`,
       );
     }
   }
