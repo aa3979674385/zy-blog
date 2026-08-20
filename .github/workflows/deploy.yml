@@ -106,13 +106,10 @@ jobs:
           cat <<EOF > secrets.json
           {
             "BETTER_AUTH_SECRET": "$BETTER_AUTH_SECRET",
-            "BETTER_AUTH_URL": "$BETTER_AUTH_URL",
             "ADMIN_EMAIL": "$ADMIN_EMAIL",
-            "GITHUB_CLIENT_ID": "$GITHUB_CLIENT_ID",
             "GITHUB_CLIENT_SECRET": "$GITHUB_CLIENT_SECRET",
             "CLOUDFLARE_ZONE_ID": "$CLOUDFLARE_ZONE_ID",
             "CLOUDFLARE_PURGE_API_TOKEN": "$CLOUDFLARE_PURGE_API_TOKEN",
-            "DOMAIN": "$DOMAIN",
             "CDN_DOMAIN": "$CDN_DOMAIN",
             "VITE_UMAMI_WEBSITE_ID": "$VITE_UMAMI_WEBSITE_ID",
             "UMAMI_SRC": "$UMAMI_SRC",
@@ -131,9 +128,9 @@ jobs:
           # the shared-runner OOM that `bun run build` can hit when it spawns Node.
           NODE_OPTIONS: "--max-old-space-size=6144"
         run: |
-          bunx wrangler secret bulk secrets.json --env ""
           bun --bun run build
           bun run deploy
+          bunx wrangler secret bulk secrets.json --env ""
 
       - name: Purge Cloudflare CDN Cache
         run: |

@@ -125,6 +125,9 @@ export function prepareWranglerConfig(env: EnvMap): "custom_domain" | "routes" {
   if (env.VITE_GEETEST_CAPTCHA_ID?.trim()) {
     content = content.replaceAll("YOUR_GEETEST_CAPTCHA_ID", env.VITE_GEETEST_CAPTCHA_ID.trim());
   }
+  if (env.GITHUB_CLIENT_ID?.trim()) {
+    content = content.replaceAll("GITHUB_CLIENT_ID_PLACEHOLDER", env.GITHUB_CLIENT_ID.trim());
+  }
 
   writeFileSync(outputPath, content);
   return mode;
