@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, lt, sql, sum } from "drizzle-orm";
-import { escapeLikeString } from "@/features/media/data/helper";
+import { escapeLikeString, normalizeMediaSearchTerm } from "@/features/media/data/helper";
 import { MediaTable, PostMediaTable } from "@/lib/db/schema";
 
 export type Media = typeof MediaTable.$inferSelect;
@@ -30,7 +30,7 @@ const DEFAULT_PAGE_SIZE = 20;
  * 获取媒体列表 (Cursor-based pagination)
  * @param cursor - 上一页最后一条记录的 id，用于分页
  * @param limit - 每页数量
- * @param search - 搜索文件名
+ * @param search - 搜索文件名 / UUID 存储键；也支持直接粘贴整条图片 URL（自动抽取 key）
  * @param unusedOnly - 是否只显示未被引用的媒体
  */
 export async function getMediaList(
@@ -55,11 +55,15 @@ export async function getMediaList(
     conditions.push(lt(MediaTable.id, cursor));
   }
   if (search) {
-    const pattern = `%${escapeLikeString(search)}%`;
-    // 同时按文件名与 UUID key（存储键）模糊匹配，支持通过 UUID 查找媒体
-    conditions.push(
-      sql`(${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\' OR ${MediaTable.key} LIKE ${pattern} ESCAPE '\\'})`,
-    );
+    // 归一化：支持直接粘贴整条图片 URL（自动抽出 UUID/文件名）或裸 UUID/文件名
+    const normalized = normalizeMediaSearchTerm(search);
+    if (normalized) {
+      const pattern = `%${escapeLikeString(normalized)}%`;
+      // 同时按文件名与 UUID key（存储键）模糊匹配，支持通过 UUID 查找媒体
+      conditions.push(
+        sql`(${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\' OR ${MediaTable.key} LIKE ${pattern} ESCAPE '\\'})`,
+      );
+    }
   }
 
   // 基础查询
