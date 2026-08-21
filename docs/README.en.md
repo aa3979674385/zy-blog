@@ -7,8 +7,8 @@
 A full-stack modern blog CMS based on **Cloudflare Workers**<br>
 Deeply integrated with D1, R2, KV, Workflows, and other Serverless services.
 
-[![License](https://img.shields.io/github/license/aa3979674385/flare-stack-blog?style=flat-square)](../LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/aa3979674385/flare-stack-blog?style=flat-square)](https://github.com/aa3979674385/flare-stack-blog/stargazers)
+[![License](https://img.shields.io/github/license/aa3979674385/zy-blog?style=flat-square)](../LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/aa3979674385/zy-blog?style=flat-square)](https://github.com/aa3979674385/zy-blog/stargazers)
 [![React](https://img.shields.io/badge/React-19-blue?logo=react&style=flat-square)](https://react.dev)
 [![TanStack Start](https://img.shields.io/badge/TanStack%20Start-black?logo=tanstack&style=flat-square)](https://tanstack.com/start)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css&style=flat-square)](https://tailwindcss.com)

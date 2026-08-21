@@ -15,8 +15,8 @@ Thank you for considering contributing to this project!
 
 ```bash
 # Clone the repository
-git clone https://github.com/aa3979674385/flare-stack-blog.git
-cd flare-stack-blog
+git clone https://github.com/aa3979674385/zy-blog.git
+cd zy-blog
 
 # Install dependencies
 bun install

@@ -5,8 +5,8 @@
 基于 **Cloudflare Workers** 的全栈现代化博客 CMS<br>
 深度集成 D1、R2、KV、Workflows 等 Serverless 服务，并在此基础上扩展了会员、积分、资源下载等一整套内容变现能力
 
-[![License](https://img.shields.io/github/license/aa3979674385/flare-stack-blog?style=flat-square)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/aa3979674385/flare-stack-blog?style=flat-square)](https://github.com/aa3979674385/flare-stack-blog/stargazers)
+[![License](https://img.shields.io/github/license/aa3979674385/zy-blog?style=flat-square)](./LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/aa3979674385/zy-blog?style=flat-square)](https://github.com/aa3979674385/zy-blog/stargazers)
 [![React](https://img.shields.io/badge/React-19-blue?logo=react&style=flat-square)](https://react.dev)
 [![TanStack Start](https://img.shields.io/badge/TanStack%20Start-black?logo=tanstack&style=flat-square)](https://tanstack.com/start)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css&style=flat-square)](https://tailwindcss.com)
@@ -232,7 +232,7 @@ src/
 克隆地址换成本仓库即可：
 
 ```bash
-git clone https://github.com/aa3979674385/flare-stack-blog.git
+git clone https://github.com/aa3979674385/zy-blog.git
 ```
 
 ### 安全配置（部署者必读）
@@ -323,8 +323,8 @@ git clone https://github.com/aa3979674385/flare-stack-blog.git
 
 ```bash
 # 克隆并安装依赖
-git clone https://github.com/aa3979674385/flare-stack-blog.git
-cd flare-stack-blog
+git clone https://github.com/aa3979674385/zy-blog.git
+cd zy-blog
 bun install
 
 # 配置环境变量

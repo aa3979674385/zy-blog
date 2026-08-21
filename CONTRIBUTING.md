@@ -15,8 +15,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/aa3979674385/flare-stack-blog.git
-cd flare-stack-blog
+git clone https://github.com/aa3979674385/zy-blog.git
+cd zy-blog
 
 # 安装依赖
 bun install
