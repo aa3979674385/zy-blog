@@ -37,6 +37,8 @@ export const PostsTable = sqliteTable(
   (table) => [
     index("published_at_idx").on(table.publishedAt, table.status),
     index("created_at_idx").on(table.createdAt),
+    // 后台文章管理列表默认按 updated_at 倒序排序，无索引时全表排序（rows_read 高）
+    index("updated_at_idx").on(table.updatedAt),
   ],
 );
 
