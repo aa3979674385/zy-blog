@@ -224,8 +224,8 @@ export function useMediaLibrary() {
   return {
     mediaItems,
     totalCount: mediaItems.length,
-    searchQuery: search ?? "", // Ensure compatibility with string type
-    setSearchQuery,
+    searchQuery: search ?? "", // URL 中的搜索词（供搜索框初始/同步显示）
+    setSearchQuery, // 提交搜索词到 URL（搜索框在提交时才调用）
     unusedOnly: unused ?? false,
     setUnusedOnly,
     selectedIds: selectedKeys, // 保持接口兼容

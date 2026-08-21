@@ -1,11 +1,12 @@
 import { CheckSquare, Filter, Search, Square, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { m } from "@/paraglide/messages";
 
 interface MediaToolbarProps {
   searchQuery: string;
-  onSearchChange: (val: string) => void;
+  onSearchSubmit: (term: string) => void;
   unusedOnly: boolean;
   onUnusedOnlyChange: (val: boolean) => void;
   selectedCount: number;
@@ -16,7 +17,7 @@ interface MediaToolbarProps {
 
 export function MediaToolbar({
   searchQuery,
-  onSearchChange,
+  onSearchSubmit,
   unusedOnly,
   onUnusedOnlyChange,
   selectedCount,
@@ -24,6 +25,12 @@ export function MediaToolbar({
   onSelectAll,
   onDelete,
 }: MediaToolbarProps) {
+  // 本地输入状态：输入时只更新本组件，不触发页面级重渲染（解决打字卡顿/粘贴丢失）
+  const [input, setInput] = useState(searchQuery);
+  useEffect(() => {
+    setInput(searchQuery);
+  }, [searchQuery]);
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 mb-8 items-stretch lg:items-center w-full border-b border-border/30 pb-8">
       {/* Search & Filter */}
@@ -37,20 +44,39 @@ export function MediaToolbar({
           <Input
             type="text"
             placeholder={m.media_search_placeholder()}
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-9 h-10 bg-transparent border-border/30 hover:border-foreground/50 focus:border-foreground transition-all rounded-none font-sans text-sm shadow-none focus-visible:ring-0"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onSearchSubmit(input);
+              }
+            }}
+            className="w-full pl-9 pr-16 h-10 bg-transparent border-border/30 hover:border-foreground/50 focus:border-foreground transition-all rounded-none font-sans text-sm shadow-none focus-visible:ring-0"
           />
-          {searchQuery && (
+          {input && (
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onSearchChange("")}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground rounded-none"
+              onClick={() => {
+                setInput("");
+                onSearchSubmit("");
+              }}
+              className="absolute right-9 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground rounded-none"
             >
               <X size={14} />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onSearchSubmit(input)}
+            aria-label={m.media_search_placeholder()}
+            title={m.media_search_placeholder()}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-none"
+          >
+            <Search size={14} strokeWidth={1.5} />
+          </Button>
         </div>
 
         <div className="h-4 w-px bg-border/30 mx-2 hidden lg:block" />

@@ -88,7 +88,7 @@ export function MediaLibrary() {
         {/* Toolbar */}
         <MediaToolbar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchSubmit={setSearchQuery}
           unusedOnly={unusedOnly}
           onUnusedOnlyChange={setUnusedOnly}
           selectedCount={selectedIds.size}
