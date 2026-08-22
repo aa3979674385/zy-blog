@@ -15,6 +15,7 @@ import type {
 } from "@/features/categories/categories.schema";
 import {
   CATEGORIES_CACHE_KEYS,
+  CategorySelectSchema,
   CategoryWithCountSchema,
 } from "@/features/categories/categories.schema";
 import { err, ok } from "@/lib/errors";
@@ -63,6 +64,27 @@ export async function getPublicCategories(
 }
 
 /**
+ * 全量分类（KV 缓存，不过滤文章数）。
+ * 用于导航菜单解析等场景：菜单项是后台显式配置的，即使分类下暂无已发布文章
+ * 也必须能解析出来（否则前台导航会静默丢掉这些菜单项）。
+ */
+export async function getAllCategoriesCached(
+  context: DbContext & { executionCtx: ExecutionContext },
+) {
+  return await CacheService.get(
+    context,
+    CATEGORIES_CACHE_KEYS.allList,
+    z.array(CategorySelectSchema),
+    async () =>
+      await CategoryRepo.getAllCategories(context.db, {
+        sortBy: "sortOrder",
+        sortDir: "asc",
+      }),
+    { ttl: "7d" },
+  );
+}
+
+/**
  * Get categories for a specific post
  */
 export async function getCategoriesByPostId(
@@ -79,6 +101,7 @@ async function invalidateCategoryRelatedCache(
   affectedPosts: Array<{ id: number; slug: string }>,
 ) {
   await CacheService.deleteKey(context, CATEGORIES_CACHE_KEYS.publicList);
+  await CacheService.deleteKey(context, CATEGORIES_CACHE_KEYS.allList);
 
   if (affectedPosts.length > 0) {
     const tasks: Array<Promise<void>> = [];
@@ -118,6 +141,7 @@ export const createCategory = async (
   });
 
   await CacheService.deleteKey(context, CATEGORIES_CACHE_KEYS.publicList);
+  await CacheService.deleteKey(context, CATEGORIES_CACHE_KEYS.allList);
 
   return ok(category);
 };

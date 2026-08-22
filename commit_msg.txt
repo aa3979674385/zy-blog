@@ -1,7 +1,11 @@
-fix(settings): 修复自动快照设置保存后被重置为默认值
+fix(nav): 前台导航改用全量分类解析，修复后台配置的二级分类不显示
 
-- 根因：主表单 zod schema(createSystemConfigFormSchema)只声明了
-  email/notification/site/auth/watermark，提交时 autoSnapshot 被 zod strip 掉，
-  后端 deepMerge 保留旧值→前端 reset 又用 DEFAULT_CONFIG 回填，表现为"恢复最早设置"
-- 在 settings 页面 onSubmit 用 methods.getValues() 取完整表单值，把
-  autoSnapshot(及 maintenance)补回提交数据，与 maintenance 的处理方式一致
+- 根因：getNavMenuFn 用 getPublicCategories(publicOnly=true) 解析分类菜单项，
+  只返回「有已发布文章」的分类；后台添加的导航分类若无已发布文章，
+  resolveNavItem 找不到该分类 → 菜单项被静默过滤 → 前台导航丢项。
+  实测 /api/categories 仅返回「人物」(id=2)，且其 parentId=1 的父分类
+  也未返回，二级结构同样塌陷。
+- 新增 getAllCategoriesCached：全量分类（不过滤文章数）+ KV 缓存(7d)，
+  分类增删改时同时清 publicList 与 allList 两个缓存 key
+- getNavMenuFn 改用 getAllCategoriesCached：导航是后台显式配置，
+  无论分类下有无已发布文章都应显示

@@ -72,4 +72,6 @@ export type CategoryWithCount = z.infer<typeof CategoryWithCountSchema>;
 
 export const CATEGORIES_CACHE_KEYS = {
   publicList: ["public", "categories", "list"] as const,
+  /** 全量分类（不过滤文章数）：供导航菜单解析等「用户显式配置、必须显示」的场景使用 */
+  allList: ["public", "categories", "all"] as const,
 } as const;

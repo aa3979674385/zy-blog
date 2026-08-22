@@ -85,8 +85,11 @@ export const getNavMenuFn = createServerFn()
   .middleware([dbMiddleware])
   .handler(async ({ context }) => {
     const cfg = await ConfigService.getSystemConfig(context);
-    // 改用 getPublicCategories：走 KV 缓存（7天TTL），避免每次 SSR 都查 D1
-    const categories = await CategoryService.getPublicCategories(context);
+    // 导航菜单解析必须用「全量分类」（不过滤无文章分类）：
+    // 菜单项是后台显式配置的，即使某分类下暂无已发布文章也要显示，
+    // 否则该菜单项会被 resolveNavItem 静默过滤（表现为导航丢项）。
+    // 全量分类同样走 KV 缓存（7天TTL），不增加每次 SSR 的 D1 读取。
+    const categories = await CategoryService.getAllCategoriesCached(context);
     const items = withSystemNavItems(
       validNavItems(cfg.navMenu ?? fallbackNavMenu()),
     );
