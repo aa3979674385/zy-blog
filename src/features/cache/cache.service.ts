@@ -1,8 +1,9 @@
 import type { z } from "zod";
+import * as CategoryService from "@/features/categories/categories.service";
 import { TAGS_CACHE_KEYS } from "@/features/tags/tags.schema";
 import type { Duration } from "@/lib/duration";
 import { ms } from "@/lib/duration";
-import { purgeSiteCDNCache } from "@/lib/invalidate";
+import { purgeInnerCache, purgeSiteCDNCache } from "@/lib/invalidate";
 import { serializeKey } from "./cache.utils";
 import type { CacheKey, CacheNamespace } from "./types";
 
@@ -255,6 +256,17 @@ export async function invalidateSiteCache(
     deleteKey(context, TAGS_CACHE_KEYS.publicList),
   ];
 
-  await Promise.all([purgeTask, ...kvTasks]);
+  // 内层 Cache API 清理：从 DB 拉所有分类 id，覆盖 /posts?categoryId=X 列表缓存
+  const categories = await CategoryService.getCategories(context, {
+    withCount: false,
+    sortBy: "sortOrder",
+    sortDir: "asc",
+  }).catch(() => []);
+  const innerTask = purgeInnerCache(
+    context.env,
+    categories.map((c) => c.id),
+  );
+
+  await Promise.all([purgeTask, innerTask, ...kvTasks]);
   return { success: true };
 }

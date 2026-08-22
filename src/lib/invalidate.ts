@@ -1,4 +1,5 @@
 import { isNotInProduction, serverEnv } from "@/lib/env/server.env";
+import { normalizeCacheRequest } from "@/lib/hono/middlewares";
 import { postPath, type PostRef } from "@/lib/post-url";
 
 interface PurgeOptions {
@@ -121,4 +122,53 @@ export async function purgeSiteCDNCache(env: Env) {
   return purgeCDNCache(env, {
     prefixes: ["/"],
   });
+}
+
+/**
+ * 清理 Worker 内层 Cache API 缓存（caches.default）。
+ *
+ * 背景：Cloudflare Purge API 只能清边缘/CDN 层，清不到 Worker 运行时里的
+ * caches.default 内层缓存。发文章后如果只 purge CDN，访客回源到 Worker 时
+ * 仍会命中内层旧缓存，导致列表/首页显示旧内容。
+ *
+ * 做法：用与 cacheMiddleware 完全一致的 normalizeCacheRequest 构造缓存 key，
+ * 对「可枚举的关键路径」做 cache.delete。详情页按 slug 不可枚举，但新文章slug
+ * 首次访问必回源，无需清理；需清理的是首页/列表/热门/分类/标签等聚合页。
+ *
+ * categoryIds 由调用方从 DB 拉取（覆盖 /posts?categoryId=X 这类列表缓存）。
+ */
+export async function purgeInnerCache(
+  env: Env,
+  categoryIds: Array<number | string>,
+): Promise<void> {
+  const cache = (caches as unknown as { default: Cache }).default;
+
+  // 关键聚合路径（与 cacheMiddleware 归一化规则一致：列表页保留功能性 query）
+  const keys: Array<string> = [
+    "/",
+    "/posts",
+    "/api/posts/paged",
+    "/api/posts/popular",
+    "/api/categories",
+    "/api/tags",
+    "/search",
+    "/api/search",
+    "/atom.xml",
+    "/feed.json",
+    "/rss.xml",
+    "/sitemap.xml",
+  ];
+  for (const id of categoryIds) {
+    keys.push(`/posts?categoryId=${id}`);
+    keys.push(`/api/posts/paged?categoryId=${id}`);
+  }
+
+  const deletions = keys.map((path) => {
+    const req = normalizeCacheRequest(
+      new Request(`https://${env.DOMAIN ?? "localhost"}${path}`),
+    );
+    return cache.delete(req).catch(() => {});
+  });
+
+  await Promise.all(deletions);
 }

@@ -68,7 +68,7 @@ const CACHE_QUERY_KEEP = new Set([
  *    列表/搜索页只保留影响返回内容的功能性参数（page/categoryId/tagName 等）。
  * 这样任意随机 query 与 no-cache 头都命中同一缓存条目，无法穿透到 D1。
  */
-function normalizeCacheRequest(req: Request): Request {
+export function normalizeCacheRequest(req: Request): Request {
   const url = new URL(req.url);
   const path = url.pathname;
 
