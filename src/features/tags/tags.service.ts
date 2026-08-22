@@ -1,7 +1,6 @@
 import { z } from "zod";
 import * as CacheService from "@/features/cache/cache.service";
 import * as PostRepo from "@/features/posts/data/posts.data";
-import { POSTS_CACHE_KEYS } from "@/features/posts/schema/posts.schema";
 import { postPath } from "@/lib/post-url";
 import * as PostAutoSnapshotService from "@/features/posts/services/post-auto-snapshot.service";
 import * as TagRepo from "@/features/tags/data/tags.data";
@@ -122,16 +121,7 @@ async function invalidateTagRelatedCache(
     // Bump post list version
     tasks.push(CacheService.bumpVersion(context, "posts:list"));
 
-    // Invalidate each affected post's detail cache
-    const version = await CacheService.getVersion(context, "posts:detail");
-    for (const post of affectedPosts) {
-      tasks.push(
-        CacheService.deleteKey(
-          context,
-          POSTS_CACHE_KEYS.detail(version, post.slug),
-        ),
-      );
-    }
+    // 详情页已不再写 KV（posts:detail 缓存废弃，由 CDN 兜底），无需逐篇删详情缓存
 
     // Purge CDN for affected posts and list pages
     const cdnUrls = ["/", "/posts"];
@@ -144,7 +134,6 @@ async function invalidateTagRelatedCache(
   } else {
     // 3. 保守策略：可能是 DB/KV 不同步，bump 所有版本号
     await Promise.all([
-      CacheService.bumpVersion(context, "posts:detail"),
       CacheService.bumpVersion(context, "posts:list"),
       purgeCDNCache(context.env, { urls: ["/", "/posts"] }),
     ]);

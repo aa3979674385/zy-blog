@@ -191,20 +191,44 @@ export function postsPagedQueryOptions(
       sortDir,
     }),
     queryFn: async () => {
-      const result = await getPostsPagedFn({
-        data: {
-          page,
-          limit: pageSize,
+      // SSR 阶段直接调 serverFn（服务端内执行，不产生 HTTP 往返）；
+      // 客户端水合后走 /api/posts/paged —— 该 API 带 CDN 缓存头（s-maxage=1 年），
+      // 首页/分类页列表数据从此有 CDN 边缘缓存兜底，发文章时 purge 刷新，减少 KV 写配额压力。
+      if (isSSR) {
+        const result = await getPostsPagedFn({
+          data: {
+            page,
+            limit: pageSize,
+            tagName,
+            categoryId,
+            uncategorized,
+            excludePinned,
+            offset,
+            sortBy,
+            sortDir,
+          },
+        });
+        return PostPagedResponseSchema.parse(result);
+      }
+      const res = await apiClient.posts.paged.$get({
+        query: {
+          page: String(page),
+          limit: String(pageSize),
           tagName,
-          categoryId,
-          uncategorized,
-          excludePinned,
-          offset,
+          ...(categoryId !== undefined
+            ? { categoryId: String(categoryId) }
+            : {}),
+          ...(uncategorized ? { uncategorized: "true" } : {}),
+          ...(excludePinned !== undefined
+            ? { excludePinned: String(excludePinned) }
+            : {}),
+          ...(offset !== undefined ? { offset: String(offset) } : {}),
           sortBy,
           sortDir,
         },
       });
-      return PostPagedResponseSchema.parse(result);
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      return PostPagedResponseSchema.parse(await res.json());
     },
   });
 }
@@ -382,6 +406,17 @@ export const pinnedPostsQuery = queryOptions({
 export function popularPostsQuery(limit?: number) {
   return queryOptions({
     queryKey: [...POSTS_KEYS.popular, limit],
-    queryFn: () => getPopularPostsFn({ data: { limit } }),
+    queryFn: async () => {
+      // SSR 走 serverFn；客户端走 /api/posts/popular（CDN 短缓存 1h，
+      // 服务端仍走 KV posts:list 版本化缓存兜底，避免每次进详情页都直连 D1）。
+      if (isSSR) {
+        return await getPopularPostsFn({ data: { limit } });
+      }
+      const res = await apiClient.posts.popular.$get({
+        query: limit != null ? { limit: String(limit) } : {},
+      });
+      if (!res.ok) throw new Error("Failed to fetch popular posts");
+      return PostItemSchema.array().parse(await res.json());
+    },
   });
 }

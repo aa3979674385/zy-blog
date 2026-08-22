@@ -250,8 +250,8 @@ export async function invalidateSiteCache(
 ) {
   const purgeTask = purgeSiteCDNCache(context.env);
   const kvTasks = [
+    // 详情页已不再写 KV（posts:detail 缓存废弃，由 CDN 兜底），不再 bump 详情版本
     bumpVersion(context, "posts:list"),
-    bumpVersion(context, "posts:detail"),
     deleteKey(context, TAGS_CACHE_KEYS.publicList),
   ];
 

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import * as AiService from "@/features/ai/ai.service";
 import * as CacheService from "@/features/cache/cache.service";
 import { syncPostMedia } from "@/features/posts/data/post-media.data";
@@ -24,7 +23,6 @@ import {
   PostItemSchema,
   PostListResponseSchema,
   PostPagedResponseSchema,
-  PostWithTocSchema,
 } from "@/features/posts/schema/posts.schema";
 import { logPostAutoSnapshot } from "@/features/posts/services/post-auto-snapshot.logging";
 import * as PostAutoSnapshotService from "@/features/posts/services/post-auto-snapshot.service";
@@ -147,76 +145,55 @@ export async function findPostBySlug(
   context: DbContext & { executionCtx: ExecutionContext },
   data: FindPostBySlugInput,
 ) {
-  const fetcher = async () => {
-    const post = await PostRepo.findPostBySlug(context.db, data.slug, {
-      publicOnly: true,
-    });
-    if (!post) return null;
+  // 详情页不再写 KV 缓存：整页 HTML 与 /api/post/:slug 均由 CDN 边缘缓存兜底（1 年）。
+  // KV 这层只兜「CDN miss 的一次」却要每次写 KV —— 文章一多（3000+），
+  // 每次发文章 bumpVersion 后爬虫重扫全站会瞬间打爆 KV 每日写配额（免费 1000 次/天）。
+  // 去掉详情页 KV 后：CDN miss 时直连 D1（一次），爬虫扫全站不再产生 KV 写。
+  const post = await PostRepo.findPostBySlug(context.db, data.slug, {
+    publicOnly: true,
+  });
+  if (!post) return null;
 
-    let contentJson = post.publicContentJson ?? post.contentJson;
-    // Backward-compatible fallback for posts that haven't been reprocessed yet.
-    // New publishes should read pre-highlighted content from `publicContentJson`.
-    if (!post.publicContentJson && contentJson) {
-      contentJson = await highlightCodeBlocks(contentJson);
-      context.executionCtx.waitUntil(
-        PostRepo.updatePublicContentSnapshot(
-          context.db,
-          post.id,
-          contentJson,
-        ).then(() => undefined),
-      );
-    }
+  let contentJson = post.publicContentJson ?? post.contentJson;
+  // Backward-compatible fallback for posts that haven't been reprocessed yet.
+  // New publishes should read pre-highlighted content from `publicContentJson`.
+  if (!post.publicContentJson && contentJson) {
+    contentJson = await highlightCodeBlocks(contentJson);
+    context.executionCtx.waitUntil(
+      PostRepo.updatePublicContentSnapshot(
+        context.db,
+        post.id,
+        contentJson,
+      ).then(() => undefined),
+    );
+  }
 
-    return {
-      ...stripPublicContentJson(post),
-      contentJson,
-      toc: generateTableOfContents(contentJson),
-    };
+  return {
+    ...stripPublicContentJson(post),
+    contentJson,
+    toc: generateTableOfContents(contentJson),
   };
-
-  return await CacheService.getVersioned(
-    context,
-    "posts:detail",
-    (version) => POSTS_CACHE_KEYS.detail(version, data.slug),
-    PostWithTocSchema,
-    fetcher,
-    { ttl: "7d" },
-  );
 }
 
 export async function getRelatedPosts(
   context: DbContext & { executionCtx: ExecutionContext },
   data: FindRelatedPostsInput,
 ) {
-  const fetcher = async () => {
-    const postIds = await PostRepo.getRelatedPostIds(context.db, data.slug, {
-      limit: data.limit,
-    });
-    return postIds;
-  };
+  // 相关文章不再写 KV：/api/post/:slug/related 由 CDN 边缘缓存兜底（1 年），
+  // 与详情页主体同一策略，避免爬虫扫全站时每个详情页的 related 请求都写 KV。
+  const postIds = await PostRepo.getRelatedPostIds(context.db, data.slug, {
+    limit: data.limit,
+  });
 
-  // Cache IDs for 7 days (long-lived cache)
-  // This key is NOT dependent on version, so it persists across publishes
-  const cacheKey = POSTS_CACHE_KEYS.related(data.slug, data.limit);
-  const cachedIds = await CacheService.get(
-    context,
-    cacheKey,
-    z.array(z.number()),
-    fetcher,
-    {
-      ttl: "7d",
-    },
-  );
-
-  if (cachedIds.length === 0) {
+  if (postIds.length === 0) {
     return [];
   }
 
   // Real-time hydration: fetch actual post data (automatically filters non-published)
-  const posts = await PostRepo.getPublicPostsByIds(context.db, cachedIds);
+  const posts = await PostRepo.getPublicPostsByIds(context.db, postIds);
 
   // Restore order because SQL 'IN' clause doesn't guarantee order
-  const orderedPosts = cachedIds
+  const orderedPosts = postIds
     .map((id) => posts.find((p) => p.id === id))
     .filter((p): p is NonNullable<typeof p> => !!p);
 
@@ -426,13 +403,7 @@ export async function deletePost(
   // Only clear cache/index for published posts
   if (post.status === "published") {
     const tasks = [];
-    const version = await CacheService.getVersion(context, "posts:detail");
-    tasks.push(
-      CacheService.deleteKey(
-        context,
-        POSTS_CACHE_KEYS.detail(version, post.slug),
-      ),
-    );
+    // 详情页已不再写 KV（posts:detail 缓存废弃，由 CDN 兜底），无需再删单篇详情缓存
     tasks.push(CacheService.bumpVersion(context, "posts:list"));
     tasks.push(SearchService.deleteIndex(context, { id: data.id }));
     tasks.push(purgePostCDNCache(context.env, post));

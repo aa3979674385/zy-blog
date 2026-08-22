@@ -14,6 +14,11 @@ export const CACHE_CONTROL = {
     "Cache-Control": "public, max-age=0, must-revalidate",
     "CDN-Cache-Control": "public, s-maxage=1, stale-while-revalidate=604800",
   },
+  /** 热门文章等短时效数据：CDN 缓存 1 小时（周榜会变，不宜长缓存） */
+  short: {
+    "Cache-Control": "public, max-age=0, must-revalidate",
+    "CDN-Cache-Control": "public, s-maxage=3600",
+  },
   immutable: {
     "Cache-Control": "public, max-age=31536000, immutable",
     "CDN-Cache-Control": "public, max-age=31536000, immutable",

@@ -46,7 +46,57 @@ const CACHE_VERSION_HEADER = "x-blog-build-id";
 /** 带内容 hash 的静态资源路径前缀（可安全永久缓存到浏览器） */
 const IMMUTABLE_ASSET_PREFIXES = ["/assets/", "/favicon", "/apple-touch-icon", "/web-app-manifest"];
 
-const tryCacheResponse = (c: Context, cache: Cache) => {
+/** 列表/搜索类页面缓存 key 需要保留的功能性 query 参数（决定返回内容） */
+const CACHE_QUERY_KEEP = new Set([
+  "page",
+  "limit",
+  "cursor",
+  "tagName",
+  "categoryId",
+  "uncategorized",
+  "excludePinned",
+  "offset",
+  "sortBy",
+  "sortDir",
+  "q",
+]);
+
+/**
+ * 构造用于缓存读写的规范化请求（防缓存穿透）：
+ * 1. 剥离请求的 Cache-Control / Pragma —— 攻击者带 no-cache/no-store 无法绕过缓存；
+ * 2. 过滤 query：详情页 /post/* 的随机 query（如 ?x=1、?utm_source=...）全部忽略，
+ *    列表/搜索页只保留影响返回内容的功能性参数（page/categoryId/tagName 等）。
+ * 这样任意随机 query 与 no-cache 头都命中同一缓存条目，无法穿透到 D1。
+ */
+function normalizeCacheRequest(req: Request): Request {
+  const url = new URL(req.url);
+  const path = url.pathname;
+
+  if (path.startsWith("/post/") || path.startsWith("/api/post/")) {
+    // 详情页：query 均为无关参数（评论高亮等是客户端行为），全部忽略
+    url.search = "";
+  } else {
+    // 列表/搜索/其它页：只保留功能性参数，丢弃跟踪参数
+    const params = new URLSearchParams();
+    for (const key of CACHE_QUERY_KEEP) {
+      const val = url.searchParams.get(key);
+      if (val !== null) params.set(key, val);
+    }
+    url.search = params.toString();
+  }
+
+  const headers = new Headers(req.headers);
+  headers.delete("cache-control");
+  headers.delete("pragma");
+
+  return new Request(url.toString(), {
+    method: req.method,
+    headers,
+    body: req.method === "GET" ? undefined : req.body,
+  });
+}
+
+const tryCacheResponse = (c: Context, cache: Cache, cacheKeyReq: Request) => {
   let strategy:
     | typeof CACHE_CONTROL.notFound
     | typeof CACHE_CONTROL.serverError
@@ -84,7 +134,7 @@ const tryCacheResponse = (c: Context, cache: Cache) => {
 
   const responseToCache = c.res.clone();
   c.executionCtx.waitUntil(
-    cache.put(c.req.raw, responseToCache).catch(() => {}),
+    cache.put(cacheKeyReq, responseToCache).catch(() => {}),
   );
 };
 
@@ -102,17 +152,20 @@ export const cacheMiddleware = createMiddleware(async (c, next) => {
     return next();
   }
 
+  // 规范化缓存 key：剥离请求缓存控制头 + 过滤无关 query（防缓存穿透）
+  const cacheKeyReq = normalizeCacheRequest(c.req.raw);
+
   // 缓存响应逻辑
   const cache = (caches as unknown as { default: Cache }).default;
 
-  const cachedResponse = await cache.match(c.req.raw);
+  const cachedResponse = await cache.match(cacheKeyReq);
   if (cachedResponse) {
     // 版本校验：构建 ID 一致才返回缓存；否则作废旧缓存并重新生成，
     // 解决「部署后 CDN purge 清不掉 Worker 内层缓存 → 旧 HTML 一直返回」的问题。
     if (cachedResponse.headers.get(CACHE_VERSION_HEADER) === __BUILD_ID__) {
       return cachedResponse;
     }
-    c.executionCtx.waitUntil(cache.delete(c.req.raw).catch(() => {}));
+    c.executionCtx.waitUntil(cache.delete(cacheKeyReq).catch(() => {}));
   }
 
   await next();
@@ -123,7 +176,7 @@ export const cacheMiddleware = createMiddleware(async (c, next) => {
     c.res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
   }
 
-  tryCacheResponse(c, cache);
+  tryCacheResponse(c, cache, cacheKeyReq);
 });
 
 const SHIELD_ALLOWED_PATHS = new Set([

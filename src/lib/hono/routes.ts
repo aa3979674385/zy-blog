@@ -6,6 +6,8 @@ import { handleImageRequest } from "@/features/media/service/media.service";
 import postsDetailRoute from "@/features/posts/api/hono/posts.detail.route";
 import postsDetailByIdRoute from "@/features/posts/api/hono/posts.detail-by-id.route";
 import postsListRoute from "@/features/posts/api/hono/posts.list.route";
+import postsPagedRoute from "@/features/posts/api/hono/posts.paged.route";
+import postsPopularRoute from "@/features/posts/api/hono/posts.popular.route";
 import postsRelatedRoute from "@/features/posts/api/hono/posts.related.route";
 import searchRoute from "@/features/search/api/hono/search.route";
 import siteDocumentsRoute from "@/features/site-documents/api/hono/site-documents.route";
@@ -46,6 +48,8 @@ async function forwardAuthRequest(c: Context<{ Bindings: Env }>) {
 // 注意：by-id 必须挂在 slug 详情路由（/:slug）之前，否则 /api/post/by-id 会被 /:slug 抢先匹配成 slug="by-id"
 const publicApi = new Hono<{ Bindings: Env }>()
   .route("/posts", postsListRoute)
+  .route("/posts/paged", postsPagedRoute)
+  .route("/posts/popular", postsPopularRoute)
   .route("/post/by-id", postsDetailByIdRoute)
   .route("/post", postsDetailRoute)
   .route("/post", postsRelatedRoute)

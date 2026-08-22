@@ -210,7 +210,7 @@ describe("Posts Integration", () => {
   });
 
   describe("Cache Behavior", () => {
-    it("should cache post by slug after first fetch", async () => {
+    it("should fetch post by slug without writing detail KV cache", async () => {
       const { id } = await PostService.createEmptyPost(adminContext);
       await updatePost({
         id,
@@ -222,23 +222,25 @@ describe("Posts Integration", () => {
         },
       });
 
-      // First fetch - cache MISS
+      // First fetch - direct D1 read (no detail KV cache layer)
       const post1 = await PostService.findPostBySlug(adminContext, {
         slug: "cached-post",
       });
       expect(post1).not.toBeNull();
+      expect(post1?.slug).toBe("cached-post");
 
-      // 等待缓存写入完成
+      // 等待后台任务完成（若有）
       await waitForBackgroundTasks(adminContext.executionCtx);
 
-      // 验证 KV 中有缓存数据 (key 格式: version:post:slug)
+      // 详情页已不再写 KV（posts:detail 缓存废弃，由 CDN 兜底），
+      // 因此 KV 中不应再出现详情缓存 key。
       const version = await CacheService.getVersion(
         adminContext,
         "posts:detail",
       );
       const cacheKey = `${version}:post:cached-post`;
       const cachedData = await env.KV.get(cacheKey, "json");
-      expect(cachedData).not.toBeNull();
+      expect(cachedData).toBeNull();
     });
 
     it("should invalidate cache when version is bumped", async () => {

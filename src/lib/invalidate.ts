@@ -105,6 +105,7 @@ export async function purgePostCDNCache(env: Env, post: PostRef) {
       `/api/post/${post.slug}`, // 单篇 API（单数，始终用原始 slug）
       `/api/post/${post.slug}/related`, // 相关文章 API
       `/api/tags`, // 标签 API
+      `/api/categories`, // 分类 API（改分类名后避免 CDN 残留旧名）
       "/",
     ],
     prefixes: [

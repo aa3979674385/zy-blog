@@ -1,7 +1,6 @@
 import { z } from "zod";
 import * as CacheService from "@/features/cache/cache.service";
 import * as PostRepo from "@/features/posts/data/posts.data";
-import { POSTS_CACHE_KEYS } from "@/features/posts/schema/posts.schema";
 import { postPath } from "@/lib/post-url";
 import * as CategoryRepo from "@/features/categories/data/categories.data";
 import type {
@@ -83,16 +82,8 @@ async function invalidateCategoryRelatedCache(
 
   if (affectedPosts.length > 0) {
     const tasks: Array<Promise<void>> = [];
+    // 详情页已不再写 KV（posts:detail 缓存废弃，由 CDN 兜底），无需逐篇删详情缓存
     tasks.push(CacheService.bumpVersion(context, "posts:list"));
-    const version = await CacheService.getVersion(context, "posts:detail");
-    for (const post of affectedPosts) {
-      tasks.push(
-        CacheService.deleteKey(
-          context,
-          POSTS_CACHE_KEYS.detail(version, post.slug),
-        ),
-      );
-    }
     const cdnUrls = ["/", "/posts"];
     for (const post of affectedPosts) {
       cdnUrls.push(postPath(post));
@@ -101,7 +92,6 @@ async function invalidateCategoryRelatedCache(
     await Promise.all(tasks);
   } else {
     await Promise.all([
-      CacheService.bumpVersion(context, "posts:detail"),
       CacheService.bumpVersion(context, "posts:list"),
       purgeCDNCache(context.env, { urls: ["/", "/posts"] }),
     ]);
