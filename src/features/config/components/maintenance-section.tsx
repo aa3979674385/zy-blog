@@ -1,5 +1,4 @@
 import { AutoSnapshotSettings } from "@/features/posts/components/admin/auto-snapshot-settings";
-import { SearchMaintenance } from "@/features/search/components/search-maintenance";
 import { VersionMaintenance } from "@/features/version/components/version-maintenance";
 import { SiteMaintenanceSettings } from "@/features/config/components/site-maintenance-settings";
 
@@ -11,10 +10,6 @@ export function MaintenanceSection() {
       <section className="border border-border/30 bg-background/50 p-8">
         <VersionMaintenance />
       </section>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-        <SearchMaintenance />
-      </div>
 
       <AutoSnapshotSettings />
     </div>

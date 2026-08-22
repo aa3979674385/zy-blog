@@ -1,0 +1,5 @@
+refactor(admin): 删除设置-维护页重建索引卡片，避免与左导航顶部按钮重复
+
+- 设置-维护页不再保留 SearchMaintenance 卡片（功能已整体移到左导航顶部）
+- 删除未使用的 search-maintenance.tsx
+- 重建索引入口现在只存在于左侧导航顶部，单一来源，无重复
