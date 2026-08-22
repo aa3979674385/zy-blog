@@ -154,10 +154,17 @@ function RouteComponent() {
 
   const onSubmit = async (data: SystemConfig) => {
     try {
-      // 维护模式由 SiteMaintenanceSettings 独立管理：主表单保存时用最新已保存值，
-      // 避免把 form 里的旧维护配置覆盖回去
+      // 维护模式 / 自动快照由各自独立管理（不在此主表单的 zod schema 中）。
+      // 表单 zod 解析（createSystemConfigFormSchema）只声明 email/notification/
+      // site/auth/watermark，提交时 autoSnapshot、maintenance 会被 strip 掉，
+      // 用 getValues() 取完整表单值补回，避免这两个字段丢失/回退成默认值。
+      const fullValues = methods.getValues();
       await saveSettings({
-        data: { ...data, maintenance: settings?.maintenance ?? data.maintenance },
+        data: {
+          ...data,
+          maintenance: fullValues.maintenance ?? data.maintenance,
+          autoSnapshot: fullValues.autoSnapshot ?? data.autoSnapshot,
+        },
       });
       toast.success(m.settings_toast_save_success());
       // Reset dirty state with new values

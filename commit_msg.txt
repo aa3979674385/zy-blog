@@ -1,9 +1,7 @@
-fix(admin): 缓存/索引入口从左侧导航移到顶部header（设置图标左侧）
+fix(settings): 修复自动快照设置保存后被重置为默认值
 
-- 按需求把两个按钮从 SideBar 顶部移除，改放到后台顶部 header 右侧组：
-  位于「设置(齿轮)」与「返回前台」之间（config.manage 权限可见）
-- 两个独立小图标按钮：🔄清除缓存（RotateCcw）、🗄️重建索引（Database）
-- 各自点击弹独立确认框（说明+确认/取消），确认后分别调
-  invalidateSiteCacheFn / buildSearchIndexFn
-- 还原 SideBar：移除顶部按钮、状态、处理函数、弹窗及无用 import
-- 原设置-维护页的缓存/索引卡片此前已删，功能仅保留在 header
+- 根因：主表单 zod schema(createSystemConfigFormSchema)只声明了
+  email/notification/site/auth/watermark，提交时 autoSnapshot 被 zod strip 掉，
+  后端 deepMerge 保留旧值→前端 reset 又用 DEFAULT_CONFIG 回填，表现为"恢复最早设置"
+- 在 settings 页面 onSubmit 用 methods.getValues() 取完整表单值，把
+  autoSnapshot(及 maintenance)补回提交数据，与 maintenance 的处理方式一致
