@@ -1,5 +1,9 @@
-refactor(admin): 删除设置-维护页重建索引卡片，避免与左导航顶部按钮重复
+fix(admin): 缓存/索引入口从左侧导航移到顶部header（设置图标左侧）
 
-- 设置-维护页不再保留 SearchMaintenance 卡片（功能已整体移到左导航顶部）
-- 删除未使用的 search-maintenance.tsx
-- 重建索引入口现在只存在于左侧导航顶部，单一来源，无重复
+- 按需求把两个按钮从 SideBar 顶部移除，改放到后台顶部 header 右侧组：
+  位于「设置(齿轮)」与「返回前台」之间（config.manage 权限可见）
+- 两个独立小图标按钮：🔄清除缓存（RotateCcw）、🗄️重建索引（Database）
+- 各自点击弹独立确认框（说明+确认/取消），确认后分别调
+  invalidateSiteCacheFn / buildSearchIndexFn
+- 还原 SideBar：移除顶部按钮、状态、处理函数、弹窗及无用 import
+- 原设置-维护页的缓存/索引卡片此前已删，功能仅保留在 header

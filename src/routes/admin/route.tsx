@@ -4,13 +4,17 @@ import {
   Outlet,
   redirect,
 } from "@tanstack/react-router";
-import { ArrowUpRight, Menu, Settings } from "lucide-react";
+import { ArrowUpRight, Database, Menu, RotateCcw, Settings } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { SideBar } from "@/components/admin/side-bar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 import Toaster from "@/components/ui/toaster";
 import { sessionQuery } from "@/features/auth/queries";
 import { useMyPermissions } from "@/features/auth/permissions";
+import { invalidateSiteCacheFn } from "@/features/cache/cache.api";
+import { buildSearchIndexFn } from "@/features/search/api/search.api";
 import { CACHE_CONTROL } from "@/lib/constants";
 import { hasPermission, type PermissionSubject } from "@/lib/permissions";
 import { m } from "@/paraglide/messages";
@@ -91,6 +95,48 @@ function AdminLayout() {
   const { data: myPerms } = useMyPermissions();
   const mySubject = myPerms as PermissionSubject | undefined;
 
+  // 顶部 header 的「清除缓存」「重建索引」按钮（config.manage 可见）
+  const canManageCache = hasPermission(mySubject, "config.manage");
+  const [showResetCacheConfirm, setShowResetCacheConfirm] = useState(false);
+  const [showRebuildIndexConfirm, setShowRebuildIndexConfirm] = useState(false);
+  const [isResettingCache, setIsResettingCache] = useState(false);
+  const [isRebuildingIndex, setIsRebuildingIndex] = useState(false);
+
+  const handleConfirmResetCache = async () => {
+    setIsResettingCache(true);
+    setShowResetCacheConfirm(false);
+    try {
+      await invalidateSiteCacheFn();
+      toast.success(m.settings_maintenance_cache_toast_success());
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : m.settings_maintenance_cache_toast_error(),
+      );
+    } finally {
+      setIsResettingCache(false);
+    }
+  };
+
+  const handleConfirmRebuildIndex = async () => {
+    setIsRebuildingIndex(true);
+    setShowRebuildIndexConfirm(false);
+    try {
+      const res = await buildSearchIndexFn();
+      toast.success(
+        m.settings_maintenance_search_toast_success({
+          duration: res?.duration ?? 0,
+          indexed: res?.indexed ?? 0,
+        }),
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "索引重建失败");
+    } finally {
+      setIsRebuildingIndex(false);
+    }
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground flex relative font-sans admin-layout">
       <SideBar
@@ -114,6 +160,28 @@ function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-6">
+            {canManageCache && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowResetCacheConfirm(true)}
+                  disabled={isResettingCache}
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  title={m.settings_maintenance_cache_btn()}
+                >
+                  <RotateCcw size={18} strokeWidth={1.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRebuildIndexConfirm(true)}
+                  disabled={isRebuildingIndex}
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  title={m.settings_maintenance_search_btn()}
+                >
+                  <Database size={18} strokeWidth={1.5} />
+                </button>
+              </>
+            )}
             {hasPermission(mySubject, "config.manage") && (
               <Link
                 to="/admin/settings"
@@ -149,6 +217,29 @@ function AdminLayout() {
           </div>
         </div>
       </main>
+
+      {/* 清除缓存确认弹窗 */}
+      <ConfirmationModal
+        isOpen={showResetCacheConfirm}
+        onClose={() => setShowResetCacheConfirm(false)}
+        onConfirm={handleConfirmResetCache}
+        title={m.settings_maintenance_cache_confirm_title()}
+        message={m.settings_maintenance_cache_confirm_message()}
+        confirmLabel={m.settings_maintenance_cache_confirm_btn()}
+        isLoading={isResettingCache}
+      />
+
+      {/* 重建索引确认弹窗 */}
+      <ConfirmationModal
+        isOpen={showRebuildIndexConfirm}
+        onClose={() => setShowRebuildIndexConfirm(false)}
+        onConfirm={handleConfirmRebuildIndex}
+        title={m.settings_maintenance_search_confirm_title()}
+        message={m.settings_maintenance_search_confirm_message()}
+        confirmLabel={m.settings_maintenance_search_confirm_btn()}
+        isLoading={isRebuildingIndex}
+      />
+
       <Toaster />
     </div>
   );
