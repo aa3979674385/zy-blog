@@ -1,11 +1,11 @@
-fix(nav): 前台导航改用全量分类解析，修复后台配置的二级分类不显示
+fix(resources): 下载数据移出详情页SSR，改浏览器localStorage缓存24h，堵越权面
 
-- 根因：getNavMenuFn 用 getPublicCategories(publicOnly=true) 解析分类菜单项，
-  只返回「有已发布文章」的分类；后台添加的导航分类若无已发布文章，
-  resolveNavItem 找不到该分类 → 菜单项被静默过滤 → 前台导航丢项。
-  实测 /api/categories 仅返回「人物」(id=2)，且其 parentId=1 的父分类
-  也未返回，二级结构同样塌陷。
-- 新增 getAllCategoriesCached：全量分类（不过滤文章数）+ KV 缓存(7d)，
-  分类增删改时同时清 publicList 与 allList 两个缓存 key
-- getNavMenuFn 改用 getAllCategoriesCached：导航是后台显式配置，
-  无论分类下有无已发布文章都应显示
+- 越权风险（实测）：详情页 HTML 走 CDN 公共缓存(1年)，但 loader 会把下载模块
+  数据(extractCode/links/权限结果) SSR 嵌入 HTML → CDN 缓存后串给所有访客，
+  爬虫/禁用JS/加载失败时可读到"高权限视角"（解压码泄露）
+- $slug.tsx loader 移除 ensureQueryData(publicPostResourcesQuery) 预取：
+  下载数据不再进 HTML/被 CDN 缓存，缓存页面永远只有公开占位
+- publicPostResourcesQuery 改为纯客户端 + localStorage 本地缓存(24h TTL)：
+  * 24h 内同浏览器再开详情页：直接读 localStorage，不发请求不查库
+  * 超 24h：清缓存重新实时查询（带 session，按当前登录者权限计算）
+  * 只缓存当前浏览器（不进 CDN、不进 KV），符合用户设计意图

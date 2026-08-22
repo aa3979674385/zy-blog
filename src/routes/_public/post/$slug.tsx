@@ -9,7 +9,6 @@ import { PostPageSkeleton } from "@theme/pages/post/skeleton";
 import { z } from "zod";
 import { siteConfigQuery, siteDomainQuery } from "@/features/config/queries";
 import { postBySlugQuery, relatedPostsQuery, popularPostsQuery, postByIdPublicQuery } from "@/features/posts/queries";
-import { publicPostResourcesQuery } from "@/features/post-resources/queries";
 import type { PostWithToc } from "@/features/posts/schema/posts.schema";
 import {
   buildArticleJsonLd,
@@ -114,13 +113,11 @@ export const Route = createFileRoute("/_public/post/$slug")({
 
     if (!post) throw notFound();
 
-    // 下载资源：SSR 预取，详情页 / 右侧栏下载模块首屏即出，不必等客户端二次回查。
-    // 与「热门文章」同一机制（loader 内 ensureQueryData → dehydrated cache → 水合即渲染）。
-    await context.queryClient
-      .ensureQueryData(publicPostResourcesQuery(post.id))
-      .catch((err) => {
-        console.error("[loader] 预取下载资源失败（不影响文章主体）", err);
-      });
+    // 注意：下载资源【不再 SSR 预取】。详情页 HTML 走 CDN 公共缓存（1 年），
+    // 若把下载模块数据（含 extractCode/links/权限结果）嵌入 HTML，会被 CDN 缓存
+    // 并串给其他访客（爬虫/禁用 JS 可读到高权限视角 → 解压码泄露）。
+    // 下载模块改为纯客户端加载：组件水合后走 listPublicPostResourcesFn（带 session、
+    // 不进 CDN/KV），并配合浏览器 localStorage 24h 缓存，见 publicPostResourcesQuery。
 
     return {
       post,
