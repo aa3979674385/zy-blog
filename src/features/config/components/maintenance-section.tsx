@@ -1,4 +1,3 @@
-import { CacheMaintenance } from "@/features/cache/components/cache-maintenance";
 import { AutoSnapshotSettings } from "@/features/posts/components/admin/auto-snapshot-settings";
 import { SearchMaintenance } from "@/features/search/components/search-maintenance";
 import { VersionMaintenance } from "@/features/version/components/version-maintenance";
@@ -15,7 +14,6 @@ export function MaintenanceSection() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
         <SearchMaintenance />
-        <CacheMaintenance />
       </div>
 
       <AutoSnapshotSettings />

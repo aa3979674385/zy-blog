@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Coins,
   Crown,
+  Database,
   FileText,
   Folder,
   Image as ImageIcon,
@@ -13,6 +14,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  RotateCcw,
   ScrollText,
   Tag,
   User,
@@ -24,6 +26,8 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { AUTH_KEYS } from "@/features/auth/queries";
+import { invalidateSiteCacheFn } from "@/features/cache/cache.api";
+import { buildSearchIndexFn } from "@/features/search/api/search.api";
 import { useMyPermissions } from "@/features/auth/permissions";
 import { authClient } from "@/lib/auth/auth.client";
 import { hasPermission, type PermissionSubject } from "@/lib/permissions";
@@ -58,6 +62,49 @@ export function SideBar({
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // 左侧导航顶部两个独立入口：清除缓存 / 重建索引（各自弹确认框）
+  const [showClearCacheConfirm, setShowClearCacheConfirm] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+  const [showRebuildIndexConfirm, setShowRebuildIndexConfirm] = useState(false);
+  const [isRebuildingIndex, setIsRebuildingIndex] = useState(false);
+
+  const handleConfirmClearCache = async () => {
+    setIsClearingCache(true);
+    setShowClearCacheConfirm(false);
+    try {
+      await invalidateSiteCacheFn();
+      toast.success(m.settings_maintenance_cache_toast_success());
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : m.settings_maintenance_cache_toast_error(),
+      );
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
+
+  const handleConfirmRebuildIndex = async () => {
+    setIsRebuildingIndex(true);
+    setShowRebuildIndexConfirm(false);
+    try {
+      const result = await buildSearchIndexFn();
+      toast.success(
+        m.settings_maintenance_search_toast_success({
+          duration: result.duration,
+          indexed: result.indexed,
+        }),
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "索引重建失败",
+      );
+    } finally {
+      setIsRebuildingIndex(false);
+    }
+  };
 
   const handleSignOutClick = () => {
     setShowLogoutConfirm(true);
@@ -191,6 +238,9 @@ export function SideBar({
     return true;
   });
 
+  // 重置缓存入口只对 config.manage 权限可见（与设置页一致）
+  const canResetCache = hasPermission(mySubject, "config.manage");
+
   return (
     <>
       {isMobileSidebarOpen && (
@@ -227,6 +277,38 @@ export function SideBar({
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+          {canResetCache && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowClearCacheConfirm(true)}
+                disabled={isClearingCache}
+                className="group flex w-full flex-col"
+              >
+                <div className="flex items-center gap-4 px-4 py-3 text-[11px] font-mono transition-all border border-transparent text-muted-foreground hover:text-foreground hover:border-border/30">
+                  <RotateCcw size={14} strokeWidth={1.5} className="shrink-0" />
+                  <span className="uppercase tracking-widest font-medium leading-none">
+                    {m.settings_maintenance_cache_btn()}
+                  </span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRebuildIndexConfirm(true)}
+                disabled={isRebuildingIndex}
+                className="group flex w-full flex-col"
+              >
+                <div className="flex items-center gap-4 px-4 py-3 text-[11px] font-mono transition-all border border-transparent text-muted-foreground hover:text-foreground hover:border-border/30">
+                  <Database size={14} strokeWidth={1.5} className="shrink-0" />
+                  <span className="uppercase tracking-widest font-medium leading-none">
+                    {m.settings_maintenance_search_btn()}
+                  </span>
+                </div>
+              </button>
+              <div className="h-px bg-border/30 my-2" />
+            </>
+          )}
+
           {visibleNavItems.map((item) => (
             <Link
               key={item.path}
@@ -314,6 +396,28 @@ export function SideBar({
         message={m.admin_sidebar_logout_message()}
         confirmLabel={m.admin_sidebar_logout_confirm()}
         isLoading={isLoggingOut}
+      />
+
+      {/* 清除缓存 Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showClearCacheConfirm}
+        onClose={() => setShowClearCacheConfirm(false)}
+        onConfirm={handleConfirmClearCache}
+        title={m.settings_maintenance_cache_confirm_title()}
+        message={m.settings_maintenance_cache_confirm_message()}
+        confirmLabel={m.settings_maintenance_cache_confirm_btn()}
+        isLoading={isClearingCache}
+      />
+
+      {/* 重建索引 Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRebuildIndexConfirm}
+        onClose={() => setShowRebuildIndexConfirm(false)}
+        onConfirm={handleConfirmRebuildIndex}
+        title={m.settings_maintenance_search_confirm_title()}
+        message={m.settings_maintenance_search_confirm_message()}
+        confirmLabel={m.settings_maintenance_search_confirm_btn()}
+        isLoading={isRebuildingIndex}
       />
     </>
   );
