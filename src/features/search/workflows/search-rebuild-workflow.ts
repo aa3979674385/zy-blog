@@ -192,10 +192,29 @@ export class SearchRebuildWorkflow extends WorkflowEntrypoint<Env, Params> {
           if (posts.length === 0) return { processed: offset };
 
           // 分批查询收费状态和分类（避免 inArray 超限）
+          // 容错：如果 post_resource 表不存在或查询失败，使用默认值继续重建
           const ids = posts.map((p) => p.id);
-          const accessByPostId = await chunkedResourceQuery(db, ids);
-          const { categoryByPostId, categoryIdByPostId } =
-            await chunkedCategoryQuery(db, ids);
+          let accessByPostId = new Map<number, "free" | "member" | "paid">();
+          let categoryByPostId = new Map<number, string>();
+          let categoryIdByPostId = new Map<number, number>();
+          try {
+            accessByPostId = await chunkedResourceQuery(db, ids);
+          } catch (err) {
+            console.warn(
+              `[search] chunkedResourceQuery failed, using defaults:`,
+              err instanceof Error ? err.message : String(err),
+            );
+          }
+          try {
+            const catResult = await chunkedCategoryQuery(db, ids);
+            categoryByPostId = catResult.categoryByPostId;
+            categoryIdByPostId = catResult.categoryIdByPostId;
+          } catch (err) {
+            console.warn(
+              `[search] chunkedCategoryQuery failed, using defaults:`,
+              err instanceof Error ? err.message : String(err),
+            );
+          }
 
           // 逐条插入 Orama 索引
           for (const post of posts) {
