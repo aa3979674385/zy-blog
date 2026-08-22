@@ -5,7 +5,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { ArrowUpRight, Database, Menu, RotateCcw, Settings } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SideBar } from "@/components/admin/side-bar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -14,7 +14,7 @@ import Toaster from "@/components/ui/toaster";
 import { sessionQuery } from "@/features/auth/queries";
 import { useMyPermissions } from "@/features/auth/permissions";
 import { invalidateSiteCacheFn } from "@/features/cache/cache.api";
-import { buildSearchIndexFn } from "@/features/search/api/search.api";
+import { buildSearchIndexFn, getRebuildStatusFn } from "@/features/search/api/search.api";
 import { CACHE_CONTROL } from "@/lib/constants";
 import { hasPermission, type PermissionSubject } from "@/lib/permissions";
 import { m } from "@/paraglide/messages";
@@ -101,6 +101,7 @@ function AdminLayout() {
   const [showRebuildIndexConfirm, setShowRebuildIndexConfirm] = useState(false);
   const [isResettingCache, setIsResettingCache] = useState(false);
   const [isRebuildingIndex, setIsRebuildingIndex] = useState(false);
+  const [rebuildProgress, setRebuildProgress] = useState<string | null>(null);
 
   const handleConfirmResetCache = async () => {
     setIsResettingCache(true);
@@ -119,21 +120,63 @@ function AdminLayout() {
     }
   };
 
+  // 轮询重建状态
+  useEffect(() => {
+    if (!isRebuildingIndex) return;
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const status = await getRebuildStatusFn();
+        if (!active || !status) return;
+
+        if (status.status === "running") {
+          setRebuildProgress(
+            `${status.processed}/${status.total}`,
+          );
+        } else if (status.status === "completed") {
+          setIsRebuildingIndex(false);
+          setRebuildProgress(null);
+          toast.success(
+            m.settings_maintenance_search_toast_success({
+              duration: status.duration ?? 0,
+              indexed: status.total ?? 0,
+            }),
+          );
+        } else if (status.status === "failed") {
+          setIsRebuildingIndex(false);
+          setRebuildProgress(null);
+          toast.error(
+            status.error
+              ? `${m.settings_maintenance_search_toast_error()}: ${status.error}`
+              : m.settings_maintenance_search_toast_error(),
+          );
+        }
+      } catch {
+        // 轮询失败静默忽略，下次重试
+      }
+    };
+
+    const interval = setInterval(poll, 3000);
+    // 立即执行一次
+    poll();
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [isRebuildingIndex]);
+
   const handleConfirmRebuildIndex = async () => {
-    setIsRebuildingIndex(true);
     setShowRebuildIndexConfirm(false);
+    setIsRebuildingIndex(true);
+    setRebuildProgress(null);
     try {
-      const res = await buildSearchIndexFn();
-      toast.success(
-        m.settings_maintenance_search_toast_success({
-          duration: res?.duration ?? 0,
-          indexed: res?.indexed ?? 0,
-        }),
-      );
+      await buildSearchIndexFn();
+      toast.success(m.settings_maintenance_search_toast_started());
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "索引重建失败");
-    } finally {
       setIsRebuildingIndex(false);
+      toast.error(error instanceof Error ? error.message : "索引重建启动失败");
     }
   };
 
@@ -175,10 +218,19 @@ function AdminLayout() {
                   type="button"
                   onClick={() => setShowRebuildIndexConfirm(true)}
                   disabled={isRebuildingIndex}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                  title={m.settings_maintenance_search_btn()}
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 relative"
+                  title={
+                    isRebuildingIndex && rebuildProgress
+                      ? `${m.settings_maintenance_search_btn()} (${rebuildProgress})`
+                      : m.settings_maintenance_search_btn()
+                  }
                 >
                   <Database size={18} strokeWidth={1.5} />
+                  {isRebuildingIndex && (
+                    <span className="absolute -bottom-1 -right-1 text-[8px] font-mono text-muted-foreground bg-background rounded px-0.5">
+                      {rebuildProgress ?? "..."}
+                    </span>
+                  )}
                 </button>
               </>
             )}

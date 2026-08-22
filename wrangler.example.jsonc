@@ -76,6 +76,11 @@
       "name": "scheduled-publish-workflow",
       "binding": "SCHEDULED_PUBLISH_WORKFLOW",
       "class_name": "ScheduledPublishWorkflow"
+    },
+    {
+      "name": "search-rebuild-workflow",
+      "binding": "SEARCH_REBUILD_WORKFLOW",
+      "class_name": "SearchRebuildWorkflow"
     }
   ],
   "durable_objects": {
@@ -167,6 +172,11 @@
           "name": "scheduled-publish-workflow",
           "binding": "SCHEDULED_PUBLISH_WORKFLOW",
           "class_name": "ScheduledPublishWorkflow"
+        },
+        {
+          "name": "search-rebuild-workflow",
+          "binding": "SEARCH_REBUILD_WORKFLOW",
+          "class_name": "SearchRebuildWorkflow"
         }
       ],
       "queues": {

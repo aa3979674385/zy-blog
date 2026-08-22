@@ -1,5 +1,5 @@
 import { insert, search as oramaSearch, remove } from "@orama/orama";
-import { and, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, count, eq, inArray, lte } from "drizzle-orm";
 import { convertToPlainText } from "@/features/posts/utils/content";
 import { createMyDb, type MyOramaDB } from "@/features/search/model/schema";
 import {
@@ -207,6 +207,65 @@ export async function deleteIndex(
   return { id: data.id };
 }
 
+/** D1 inArray 单次参数上限 1000，留余量取 500 */
+const IN_ARRAY_CHUNK = 500;
+
+/** 分批查询收费状态，避免 inArray 参数超 D1 上限 */
+async function chunkedResourceQuery(
+  db: SearchMetaDb,
+  ids: number[],
+): Promise<Map<number, "free" | "member" | "paid">> {
+  const result = new Map<number, "free" | "member" | "paid">();
+  for (let i = 0; i < ids.length; i += IN_ARRAY_CHUNK) {
+    const chunk = ids.slice(i, i + IN_ARRAY_CHUNK);
+    const rows = await db
+      .select({
+        postId: postResource.postId,
+        accessType: postResource.accessType,
+      })
+      .from(postResource)
+      .where(inArray(postResource.postId, chunk));
+    for (const r of rows) {
+      result.set(r.postId, r.accessType as "free" | "member" | "paid");
+    }
+  }
+  return result;
+}
+
+/** 分批查询分类信息，避免 inArray 参数超 D1 上限 */
+async function chunkedCategoryQuery(
+  db: SearchMetaDb,
+  ids: number[],
+): Promise<{
+  categoryByPostId: Map<number, string>;
+  categoryIdByPostId: Map<number, number>;
+}> {
+  const categoryByPostId = new Map<number, string>();
+  const categoryIdByPostId = new Map<number, number>();
+  for (let i = 0; i < ids.length; i += IN_ARRAY_CHUNK) {
+    const chunk = ids.slice(i, i + IN_ARRAY_CHUNK);
+    const rows = await db
+      .select({
+        postId: PostCategoriesTable.postId,
+        id: CategoriesTable.id,
+        name: CategoriesTable.name,
+      })
+      .from(PostCategoriesTable)
+      .innerJoin(
+        CategoriesTable,
+        eq(PostCategoriesTable.categoryId, CategoriesTable.id),
+      )
+      .where(inArray(PostCategoriesTable.postId, chunk));
+    for (const r of rows) {
+      if (!categoryByPostId.has(r.postId)) {
+        categoryByPostId.set(r.postId, r.name);
+        categoryIdByPostId.set(r.postId, r.id);
+      }
+    }
+  }
+  return { categoryByPostId, categoryIdByPostId };
+}
+
 export async function rebuildIndex(context: DbContext, targetDb?: MyOramaDB) {
   const { env, db } = context;
   const start = Date.now();
@@ -214,96 +273,90 @@ export async function rebuildIndex(context: DbContext, targetDb?: MyOramaDB) {
 
   const searchDb = targetDb ?? (await createMyDb());
 
-  const posts = await db.query.PostsTable.findMany({
-    where: and(
-      eq(PostsTable.status, "published"),
-      lte(PostsTable.publishedAt, new Date()),
-    ),
-    with: {
-      postTags: {
-        with: {
-          tag: true,
-        },
-      },
-    },
-  });
+  // 统计已发布文章总数
+  const [countRow] = await db
+    .select({ count: count() })
+    .from(PostsTable)
+    .where(
+      and(
+        eq(PostsTable.status, "published"),
+        lte(PostsTable.publishedAt, new Date()),
+      ),
+    );
+  const total = countRow?.count ?? 0;
 
-  // 批量读取收费状态 / 分类名（避免逐篇查询）
-  const ids = posts.map((p) => p.id);
-  const resourceRows =
-    ids.length > 0
-      ? await db
-          .select({
-            postId: postResource.postId,
-            accessType: postResource.accessType,
-          })
-          .from(postResource)
-          .where(inArray(postResource.postId, ids))
-      : [];
-  const accessByPostId = new Map<number, "free" | "member" | "paid">();
-  for (const r of resourceRows) {
-    accessByPostId.set(r.postId, r.accessType);
+  if (total === 0) {
+    await persistOramaDb(env, searchDb, 0);
+    return { indexed: 0, duration: Date.now() - start };
   }
 
-  const catRows =
-    ids.length > 0
-      ? await db
-          .select({
-            postId: PostCategoriesTable.postId,
-            id: CategoriesTable.id,
-            name: CategoriesTable.name,
-          })
-          .from(PostCategoriesTable)
-          .innerJoin(
-            CategoriesTable,
-            eq(PostCategoriesTable.categoryId, CategoriesTable.id),
-          )
-          .where(inArray(PostCategoriesTable.postId, ids))
-      : [];
-  const categoryIdByPostId = new Map<number, number>();
-  const categoryByPostId = new Map<number, string>();
-  for (const r of catRows) {
-    // 取每篇文章的第一个分类
-    if (!categoryByPostId.has(r.postId)) {
-      categoryByPostId.set(r.postId, r.name);
-      categoryIdByPostId.set(r.postId, r.id);
+  // 分批查询 + 插入（每批 200 篇，控制内存和 CPU）
+  const BATCH_SIZE = 200;
+  const batchCount = Math.ceil(total / BATCH_SIZE);
+  let indexed = 0;
+
+  for (let i = 0; i < batchCount; i++) {
+    const offset = i * BATCH_SIZE;
+
+    const posts = await db.query.PostsTable.findMany({
+      where: and(
+        eq(PostsTable.status, "published"),
+        lte(PostsTable.publishedAt, new Date()),
+      ),
+      with: {
+        postTags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+      limit: BATCH_SIZE,
+      offset,
+      orderBy: [asc(PostsTable.id)],
+    });
+
+    if (posts.length === 0) break;
+
+    // 分批查询收费状态和分类（避免 inArray 超限）
+    const ids = posts.map((p) => p.id);
+    const accessByPostId = await chunkedResourceQuery(db, ids);
+    const { categoryByPostId, categoryIdByPostId } =
+      await chunkedCategoryQuery(db, ids);
+
+    for (const post of posts) {
+      if (!post.title || !post.slug) continue;
+      const plain = convertToPlainText(post.contentJson);
+      const content =
+        plain.length > CONTENT_SLICE ? plain.slice(0, CONTENT_SLICE) : plain;
+      const summary =
+        post.summary && post.summary.trim().length > 0
+          ? post.summary
+          : content.slice(0, SNIPPET_SLICE);
+      const tags = post.postTags.map((pt) => pt.tag.name);
+
+      await insert(searchDb, {
+        id: post.id.toString(),
+        title: post.title,
+        slug: post.slug,
+        tags,
+        summary,
+        cover: post.coverImage ?? "",
+        accessType: accessByPostId.get(post.id) ?? "free",
+        categoryId: categoryIdByPostId.get(post.id) ?? null,
+        categoryName: categoryByPostId.get(post.id) ?? null,
+        publishedAt: post.publishedAt ?? null,
+        // biome-ignore lint/suspicious/noExplicitAny: Orama insert 接受动态文档字段
+      } as any);
+      indexed++;
     }
   }
 
-  for (const post of posts) {
-    if (!post.title || !post.slug) continue;
-    const plain = convertToPlainText(post.contentJson);
-    const content =
-      plain.length > CONTENT_SLICE ? plain.slice(0, CONTENT_SLICE) : plain;
-    const summary =
-      post.summary && post.summary.trim().length > 0
-        ? post.summary
-        : content.slice(0, SNIPPET_SLICE);
-
-    const tags = post.postTags.map((pt) => pt.tag.name);
-
-    await insert(searchDb, {
-      id: post.id.toString(),
-      title: post.title,
-      slug: post.slug,
-      tags,
-      summary,
-      // 以下均为仅存储、不进分词索引的字段
-      cover: post.coverImage ?? "",
-      accessType: accessByPostId.get(post.id) ?? "free",
-      categoryId: categoryIdByPostId.get(post.id) ?? null,
-      categoryName: categoryByPostId.get(post.id) ?? null,
-      publishedAt: post.publishedAt ?? null,
-      // biome-ignore lint/suspicious/noExplicitAny: Orama insert 接受动态文档字段，需绕过严格类型
-    } as any);
-  }
-
-  await persistOramaDb(env, searchDb, posts.length);
+  await persistOramaDb(env, searchDb, indexed);
 
   const duration = Date.now() - start;
-  console.log(`[search] Indexed ${posts.length} posts in ${duration}ms`);
+  console.log(`[search] Indexed ${indexed} posts in ${duration}ms`);
 
-  return { indexed: posts.length, duration };
+  return { indexed, duration };
 }
 
 export async function getIndexVersion(context: DbContext) {

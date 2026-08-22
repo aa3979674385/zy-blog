@@ -2,10 +2,11 @@ import type { RawData } from "@orama/orama";
 import { load, save } from "@orama/orama";
 import type { MyOramaDB } from "@/features/search/model/schema";
 import { createMyDb } from "@/features/search/model/schema";
-import { getDb } from "@/lib/db";
 
 const KV_KEY = "search:index:v13";
 const KV_META_KEY = "search:index:meta:v13";
+const KV_REBUILD_TMP_KEY = "search:index:rebuild:tmp";
+const KV_REBUILD_STATUS_KEY = "search:index:rebuild:status";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -78,31 +79,26 @@ async function loadFromKv(env: Env): Promise<MyOramaDB | null> {
 }
 
 /**
- * 后台异步重建索引：不阻塞调用方。重建完成后写回 KV 并刷新内存缓存，
- * 后续搜索请求即可命中，无需人工去后台点“重建索引”。
- * 用 rebuildInflight 跨请求去重，避免部署后瞬时大量请求重复触发全库扫描。
+ * 后台异步重建索引：通过 Workflow 分批处理，不阻塞调用方。
+ * 用 rebuildInflight 跨请求去重，避免部署后瞬时大量请求重复触发。
  */
 async function triggerBackgroundRebuild(
   env: Env,
   waitUntil?: (p: Promise<unknown>) => void,
 ): Promise<void> {
   if (rebuildInflight) return rebuildInflight;
+
+  // 检查是否已有重建在进行
+  const existing = await getRebuildStatus(env);
+  if (existing?.status === "running") return;
+
   rebuildInflight = (async () => {
     try {
-      const { rebuildIndex } = await import(
-        "@/features/search/service/search.service"
-      );
-      await rebuildIndex({ env, db: getDb(env) });
-      const rebuilt = await loadFromKv(env);
-      const newMeta = await getOramaMeta(env);
-      if (rebuilt && (newMeta?.count ?? 0) > 0) {
-        cachedDb = rebuilt;
-        cachedVersion = newMeta!.version;
-      }
+      await env.SEARCH_REBUILD_WORKFLOW.create({ params: {} });
     } catch (err) {
       console.error(
         JSON.stringify({
-          message: "orama index auto-rebuild failed",
+          message: "search rebuild workflow trigger failed",
           error: err instanceof Error ? err.message : String(err),
         }),
       );
@@ -110,7 +106,7 @@ async function triggerBackgroundRebuild(
       rebuildInflight = null;
     }
   })();
-  // 让后台重建在响应返回后继续跑（Cloudflare Workers waitUntil），避免 isolate 被冻结导致重建中断
+
   waitUntil?.(rebuildInflight);
   return rebuildInflight;
 }
@@ -179,4 +175,60 @@ export async function getOramaMeta(
 export function setOramaDb(db: MyOramaDB, version: string) {
   cachedDb = db;
   cachedVersion = version;
+}
+
+/* ==================== 重建状态管理 ==================== */
+
+export interface RebuildStatus {
+  status: "running" | "completed" | "failed";
+  total: number;
+  processed: number;
+  startTime: number;
+  duration?: number;
+  error?: string;
+}
+
+export async function setRebuildStatus(
+  env: Env,
+  status: RebuildStatus,
+): Promise<void> {
+  await env.KV.put(KV_REBUILD_STATUS_KEY, JSON.stringify(status));
+}
+
+export async function getRebuildStatus(
+  env: Env,
+): Promise<RebuildStatus | null> {
+  return await env.KV.get(KV_REBUILD_STATUS_KEY, "json");
+}
+
+/* ==================== 临时索引 KV（Workflow 重建用） ==================== */
+
+export async function saveTmpOramaDb(env: Env, db: MyOramaDB): Promise<void> {
+  const raw = save(db);
+  const compressed = await compressRaw(raw);
+  await env.KV.put(KV_REBUILD_TMP_KEY, compressed);
+}
+
+export async function loadTmpOramaDb(env: Env): Promise<MyOramaDB | null> {
+  const buf = await env.KV.get(KV_REBUILD_TMP_KEY, "arrayBuffer");
+  if (!buf) return null;
+
+  try {
+    const raw = await decompressToRaw(buf);
+    const db = await createMyDb();
+    await load(db, raw);
+    return db;
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        message: "orama tmp index load failed",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    return null;
+  }
+}
+
+export async function deleteTmpOramaDb(env: Env): Promise<void> {
+  await env.KV.delete(KV_REBUILD_TMP_KEY);
 }
