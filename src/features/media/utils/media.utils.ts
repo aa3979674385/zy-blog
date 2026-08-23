@@ -59,3 +59,10 @@ export interface WatermarkConfig {
   scale?: number | null;
   position?: string | null;
 }
+
+export interface CompressionConfig {
+  enabled: boolean;
+  maxWidth: number;
+  outputFormat: "webp" | "jpeg" | "png" | "auto";
+  quality: number;
+}

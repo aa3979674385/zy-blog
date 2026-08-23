@@ -151,6 +151,19 @@ export const SystemConfigSchema = z.object({
         .default("southeast"),
     })
     .optional(),
+  // 图片压缩：上传时自动缩小尺寸+转换格式，减少图片体积
+  compression: z
+    .object({
+      /** 总开关：关闭则图片原样上传 */
+      enabled: z.boolean().default(false),
+      /** 最大宽度（px）：图片宽超过此值才压缩，小于则保持原尺寸 */
+      maxWidth: z.number().int().min(100).max(4096).default(1200),
+      /** 输出格式：webp=WebP（推荐），jpeg=JPEG，png=PNG，auto=与原图同格式 */
+      outputFormat: z.enum(["webp", "jpeg", "png", "auto"]).default("webp"),
+      /** 压缩质量 0.1-1.0，越小体积越小 */
+      quality: z.number().min(0.1).max(1).default(0.85),
+    })
+    .optional(),
 });
 
 export type AuthMethod = "email" | "oauth" | "both";
@@ -162,6 +175,7 @@ export const createSystemConfigFormSchema = (messages: Messages) =>
     site: createSiteConfigInputFormSchema(messages).optional(),
     auth: SystemConfigSchema.shape.auth,
     watermark: SystemConfigSchema.shape.watermark,
+    compression: SystemConfigSchema.shape.compression,
   });
 
 export type SystemConfig = z.infer<typeof SystemConfigSchema>;
@@ -215,6 +229,12 @@ export const DEFAULT_CONFIG: SystemConfig = {
     opacity: 0.5,
     scale: 0.2,
     position: "southeast",
+  },
+  compression: {
+    enabled: false,
+    maxWidth: 1200,
+    outputFormat: "webp",
+    quality: 0.85,
   },
 };
 

@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Check,
+  FileImage,
   Hammer,
   KeyRound,
   LayoutTemplate,
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuthSettingsSection } from "@/features/config/components/auth-settings-section";
+import { CompressionSection } from "@/features/config/components/compression-section";
 import { MaintenanceSection } from "@/features/config/components/maintenance-section";
 import { SectionSkeleton } from "@/features/config/components/settings-skeleton";
 import { SiteSettingsSection } from "@/features/config/components/site-settings-section";
@@ -91,6 +93,11 @@ function RouteComponent() {
       icon: Stamp,
       label: "图片水印",
     },
+    {
+      value: "compression",
+      icon: FileImage,
+      label: "图片压缩",
+    },
   ] as const;
 
   const methods = useForm<SystemConfig>({
@@ -128,6 +135,10 @@ function RouteComponent() {
         watermark: {
           ...DEFAULT_CONFIG.watermark,
           ...(settings.watermark ?? {}),
+        },
+        compression: {
+          ...DEFAULT_CONFIG.compression,
+          ...(settings.compression ?? {}),
         },
       });
     }
@@ -344,6 +355,18 @@ function RouteComponent() {
                 </p>
               </div>
               <WatermarkSection />
+            </TabsContent>
+
+            <TabsContent value="compression" className="mt-0 space-y-10">
+              <div className="space-y-2 pb-6 border-b border-border/30">
+                <h2 className="text-2xl font-serif font-medium tracking-tight">
+                  图片压缩
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  上传时自动压缩图片，减少体积、加快加载。
+                </p>
+              </div>
+              <CompressionSection />
             </TabsContent>
           </div>
         </Tabs>
