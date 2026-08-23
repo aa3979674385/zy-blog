@@ -15,7 +15,7 @@ const route = app.get(
   zValidator(
     "query",
     SearchQuerySchema.extend({
-      limit: z.coerce.number().optional().default(10),
+      limit: z.coerce.number().optional().default(25),
     }),
   ),
   async (c) => {
