@@ -432,3 +432,15 @@ export async function deleteUser(db: DB, id: string): Promise<void> {
   await db.delete(account).where(eq(account.userId, id));
   await db.delete(user).where(eq(user.id, id));
 }
+
+export async function updateUserPassword(
+  db: DB,
+  userId: string,
+  hashedPassword: string,
+): Promise<void> {
+  // 仅更新邮箱+密码账号（credential provider），不动 OAuth 绑定
+  await db
+    .update(account)
+    .set({ password: hashedPassword })
+    .where(and(eq(account.userId, userId), eq(account.providerId, "credential")));
+}

@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { createAuthMiddleware } from "@better-auth/core/api";
 import { APIError } from "@better-auth/core/error";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -13,6 +14,24 @@ import { serverEnv } from "@/lib/env/server.env";
 import type { Locale } from "@/lib/i18n";
 import { m } from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
+
+/** 从 better-auth hook 上下文中提取客户端 IP（Cloudflare cf-connecting-ip 优先）。 */
+function extractIpFromContext(ctx: unknown): string {
+  try {
+    const headers = (ctx as { request?: { headers?: Headers } })?.request
+      ?.headers;
+    if (headers instanceof Headers) {
+      return (
+        headers.get("cf-connecting-ip") ||
+        headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "127.0.0.1"
+      );
+    }
+  } catch {
+    // ignore
+  }
+  return "127.0.0.1";
+}
 
 async function checkEmailRateLimit(
   env: Env,
@@ -63,13 +82,8 @@ export async function getAuth({
     !!GITHUB_CLIENT_ID &&
     !!GITHUB_CLIENT_SECRET;
 
-  // 固定 10 个 DO 实例池，随机选择避免冷启动
-  const PASSWORD_HASHER_POOL_SIZE = 10;
-  function getPasswordHasher() {
-    const index = Math.floor(Math.random() * PASSWORD_HASHER_POOL_SIZE);
-    const id = env.PASSWORD_HASHER.idFromName(`hasher-${index}`);
-    return env.PASSWORD_HASHER.get(id);
-  }
+  const { getPasswordHasher } = await import("@/lib/auth/utils");
+  const hasher = getPasswordHasher(env);
 
   function getAuthEmailLocale(): Locale {
     try {
@@ -110,9 +124,9 @@ export async function getAuth({
       enabled: enableEmail,
       requireEmailVerification,
       password: {
-        hash: (password: string) => getPasswordHasher().hash(password),
+        hash: (password: string) => hasher.hash(password),
         verify: (params: { hash: string; password: string }) =>
-          getPasswordHasher().verify(params),
+          hasher.verify(params),
       },
       sendResetPassword: async ({ user, url }) => {
         // Per-email rate limit: 3 per hour — silently skip if exceeded
@@ -171,11 +185,27 @@ export async function getAuth({
     databaseHooks: {
       user: {
         create: {
-          before: async (user) => {
+          before: async (user, ctx) => {
+            const ip = extractIpFromContext(ctx);
             if (user.email === ADMIN_EMAIL) {
-              return { data: { ...user, role: "admin" } };
+              return { data: { ...user, role: "admin", registeredIp: ip } };
             }
-            return { data: user };
+            return { data: { ...user, registeredIp: ip } };
+          },
+        },
+      },
+      session: {
+        create: {
+          before: async (session, ctx) => {
+            const ip = extractIpFromContext(ctx);
+            // 更新用户最后登录 IP
+            if (session.userId) {
+              await db
+                .update(authSchema.user)
+                .set({ lastLoginIp: ip })
+                .where(eq(authSchema.user.id, session.userId));
+            }
+            return { data: session };
           },
         },
       },

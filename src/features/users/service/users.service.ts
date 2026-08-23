@@ -57,6 +57,18 @@ export async function clearPointTransactions(context: DbContext) {
   return UserRepo.clearPointTransactions(context.db);
 }
 
+/** 管理员重置用户密码（直接覆写 account 表 password 字段）。 */
+export async function resetUserPassword(
+  context: DbContext,
+  userId: string,
+  newPassword: string,
+): Promise<void> {
+  const { getPasswordHasher } = await import("@/lib/auth/utils");
+  const hasher = getPasswordHasher(context.env);
+  const hash = await hasher.hash(newPassword);
+  await UserRepo.updateUserPassword(context.db, userId, hash);
+}
+
 export async function getCheckInStatus(context: DbContext, userId: string) {
   return UserRepo.getCheckInStatus(context.db, userId);
 }

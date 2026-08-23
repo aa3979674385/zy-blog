@@ -32,6 +32,9 @@ export const user = sqliteTable("user", {
   banned: integer("banned", { mode: "boolean" }).default(false),
   banReason: text("ban_reason"),
   banExpires: integer("ban_expires", { mode: "timestamp_ms" }),
+  // IP 记录：注册时自动记录，登录时更新
+  registeredIp: text("registered_ip"),
+  lastLoginIp: text("last_login_ip"),
 });
 
 export const session = sqliteTable(

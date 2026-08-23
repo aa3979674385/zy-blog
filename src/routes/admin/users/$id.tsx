@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ShieldOff,
   Trash2,
+  KeyRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,6 +30,7 @@ import {
   useDeleteUser,
   useSetUserMembership,
   useUpdateUser,
+  useResetUserPassword,
 } from "@/features/users/queries";
 import { useMembershipPlanOptions } from "@/features/membership/queries";
 import { isUserMember } from "@/features/post-resources/data/post-resources.data";
@@ -109,6 +111,7 @@ function UserDetailPage() {
   const { data: user, isLoading, isError } = useQuery(userDetailQuery(id));
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
+  const resetPassword = useResetUserPassword();
   const adjustPoints = useAdjustUserPoints();
   const { data: pointConfig } = usePointConfig();
   const { data: membershipPlans = [] } = useMembershipPlanOptions();
@@ -118,6 +121,8 @@ function UserDetailPage() {
   // 会员状态：关联套餐 + 到期日期
   const [planId, setPlanId] = useState<string>("");
   const [expiryStr, setExpiryStr] = useState<string>(defaultExpiryValue());
+  // 密码重置输入
+  const [newPassword, setNewPassword] = useState<string>("");
 
   // 积分调整本地状态：按字段维护（数量 / 原因 / 模式）
   const [ptState, setPtState] = useState<Record<string, { amount: string; reason: string; mode: "add" | "sub" }>>({
@@ -378,6 +383,8 @@ function UserDetailPage() {
               value={user.banExpires ? formatDate(user.banExpires) : "—"}
             />
             <InfoRow label="注册时间" value={formatDate(user.createdAt)} />
+            <InfoRow label="注册 IP" value={user.registeredIp ?? "—"} mono />
+            <InfoRow label="最后登录 IP" value={user.lastLoginIp ?? "—"} mono />
             <InfoRow label="更新时间" value={formatDate(user.updatedAt)} />
             <InfoRow
               label={pointConfig?.pointsName ?? "普通积分"}
@@ -443,6 +450,63 @@ function UserDetailPage() {
                   <option value="admin">管理员</option>
                 </select>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* 密码重置 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound size={16} className="opacity-60" />
+                密码重置
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+                  新密码
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="输入新密码（最少6位）"
+                  className="h-9 w-full max-w-sm rounded-none border-b border-input bg-transparent px-0 py-1 text-sm focus-visible:outline-hidden focus-visible:border-foreground"
+                />
+              </div>
+              <Button
+                type="button"
+                disabled={
+                  resetPassword.isPending ||
+                  newPassword.length < 6 ||
+                  isSelf
+                }
+                onClick={async () => {
+                  try {
+                    await resetPassword.mutateAsync({
+                      id: user.id,
+                      newPassword,
+                    });
+                    toast.success("密码已重置");
+                    setNewPassword("");
+                  } catch {
+                    toast.error("密码重置失败");
+                  }
+                }}
+                className="bg-foreground text-background hover:bg-foreground/90"
+              >
+                {resetPassword.isPending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <KeyRound size={14} />
+                )}
+                重置密码
+              </Button>
+              {isSelf ? (
+                <span className="block text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+                  不能重置当前登录管理员自己的密码
+                </span>
+              ) : null}
             </CardContent>
           </Card>
 

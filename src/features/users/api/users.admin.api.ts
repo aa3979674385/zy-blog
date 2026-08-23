@@ -179,6 +179,27 @@ export const deleteUserFn = createServerFn()
     });
   });
 
+const resetPasswordSchema = z.object({
+  id: z.string(),
+  newPassword: z.string().min(6).max(128),
+});
+
+export const resetUserPasswordFn = createServerFn({ method: "POST" })
+  .middleware([requirePermission("user.manage")])
+  .inputValidator(resetPasswordSchema)
+  .handler(async ({ data, context }) => {
+    const target = await UserService.getUser(context, data.id);
+    if (!target) throw new Error("USER_NOT_FOUND");
+    await UserService.resetUserPassword(context, data.id, data.newPassword);
+    await recordAdminLog(context.db, context.session.user, {
+      action: "user.resetPassword",
+      targetType: "user",
+      targetId: data.id,
+      targetName: target.name ?? null,
+      detail: null,
+    });
+  });
+
 const adjustPointsInputSchema = z.object({
   id: z.string(),
   type: z.enum(["points", "credits"]),

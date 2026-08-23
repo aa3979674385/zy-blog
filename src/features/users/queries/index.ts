@@ -21,6 +21,7 @@ import {
   getPointTransactionsFn,
   getUserFn,
   listUsersFn,
+  resetUserPasswordFn,
   setUserMembershipFn,
   type UpdateUserPayload,
   updateUserFn,
@@ -87,6 +88,18 @@ export function useDeleteUser() {
     mutationFn: (id: string) => deleteUserFn({ data: { id } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_KEYS.all });
+    },
+  });
+}
+
+/** 管理员重置用户密码 */
+export function useResetUserPassword() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { id: string; newPassword: string }) =>
+      resetUserPasswordFn({ data }),
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: USERS_KEYS.detail(vars.id) });
     },
   });
 }
