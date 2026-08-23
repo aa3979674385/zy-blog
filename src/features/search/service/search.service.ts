@@ -16,10 +16,7 @@ import type {
   SearchQueryInput,
   UpsertSearchDocInput,
 } from "@/features/search/search.schema";
-import {
-  buildSnippet,
-  getMatchedTerms,
-} from "@/features/search/utils/search.utils";
+import { buildSnippet } from "@/features/search/utils/search.utils";
 import { getDb } from "@/lib/db";
 import {
   CategoriesTable,
@@ -71,75 +68,124 @@ export async function search(
   waitUntil?: (p: Promise<unknown>) => void,
 ) {
   const db = await getOramaDb(context.env, waitUntil);
-  const result = await oramaSearch(db, {
-    term: data.q,
-    // 仅检索标题字段
-    properties: ["title"],
-    // 说明：标题按「字符」建索引（见 schema.ts），单字符无前缀概念，
-    // 且 Orama v3 的 SearchParams 并无 prefix 选项；真正的子串语义
-    // 由下方 includes() 后过滤保证，这里只负责多召回候选。
-    limit: 200,
-  });
-
   const query = data.q.toLowerCase();
-  return (
-    result.hits
-      // 子串包含匹配：标题里出现完整查询串即命中
-      // （测 / 测试 / 测试文 / 测试文章 全部命中；标题不含查询串的被过滤掉）
-      .filter((hit) =>
-        String(hit.document.title ?? "")
-          .toLowerCase()
-          .includes(query),
-      )
-      .slice(0, Math.min(data.limit, 25))
-      .map((hit) => {
-        const { document, score } = hit;
-        // summary/tags 已从分词索引移除（仅标题参与检索），
-        // 但随文档存储用于结果展示，故以类型断言读取
-        const doc = document as {
-          summary?: string;
-          tags?: string[];
-        };
-        const titleHighlight = buildSnippet({
-          text: document.title,
-          terms: getMatchedTerms(hit, "title"),
-          fallbackTerm: data.q,
-        });
-        const summaryHighlight = buildSnippet({
-          text: doc.summary ?? "",
-          terms: getMatchedTerms(hit, "summary"),
-          fallbackTerm: data.q,
-        });
+  const limit = Math.min(data.limit, 25);
 
+  // 全量线性扫描所有文档标题，做子串匹配。
+  // 不依赖 Orama 的 BM25 相关性排序——BM25 会把标题长、匹配字占比低的文档排到后面，
+  // 导致单字搜索时（如「黑」）低相关性文档被 limit 截断而漏召回。
+  // 3000 篇文章的标题扫描在内存中是微秒级，性能无忧。
+  const allDocs = (
+    db as unknown as {
+      data?: { docs?: Record<string, Record<string, unknown>> };
+    }
+  ).data?.docs;
+
+  let matched: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    summary: string;
+    tags: string[];
+    cover: string | null;
+    accessType: "free" | "member" | "paid" | null;
+    categoryName: string | null;
+    categoryId: number | null;
+    publishedAt: string | Date | null;
+    score: number;
+  }>;
+
+  if (allDocs) {
+    matched = Object.values(allDocs)
+      .filter((doc) =>
+        String(doc?.title ?? "").toLowerCase().includes(query),
+      )
+      .map((doc) => ({
+        id: String(doc.id ?? ""),
+        slug: String(doc.slug ?? ""),
+        title: String(doc.title ?? ""),
+        summary: String(doc.summary ?? ""),
+        tags: (doc.tags as string[]) ?? [],
+        cover: (doc.cover as string) ?? null,
+        accessType:
+          (doc.accessType as "free" | "member" | "paid" | null) ?? null,
+        categoryName: (doc.categoryName as string | null) ?? null,
+        categoryId: (doc.categoryId as number | null) ?? null,
+        publishedAt:
+          (doc.publishedAt as string | Date | null) ?? null,
+        score: 1,
+      }))
+      // 排序：匹配位置靠前优先（用户搜的词出现在标题开头更相关），
+      // 其次标题短的优先（匹配密度高）
+      .sort((a, b) => {
+        const posA = a.title.toLowerCase().indexOf(query);
+        const posB = b.title.toLowerCase().indexOf(query);
+        if (posA !== posB) return posA - posB;
+        return a.title.length - b.title.length;
+      });
+  } else {
+    // 降级：无法直接访问文档内部结构时，回退到 Orama 搜索
+    const result = await oramaSearch(db, {
+      term: data.q,
+      properties: ["title"],
+      limit: 200,
+    });
+    matched = result.hits
+      .filter((hit) =>
+        String(hit.document.title ?? "").toLowerCase().includes(query),
+      )
+      .map((hit) => {
+        const doc = hit.document as Record<string, unknown>;
         return {
-          post: {
-            id: document.id,
-            slug: document.slug,
-            title: document.title,
-            summary: doc.summary ?? "",
-            tags: doc.tags ?? [],
-            // 以下均为非 schema 字段，仅存储、不进分词索引
-            cover: (document as { cover?: string }).cover ?? null,
-            accessType:
-              (document as { accessType?: "free" | "member" | "paid" | null })
-                .accessType ?? null,
-            categoryName:
-              (document as { categoryName?: string | null }).categoryName ??
-              null,
-            categoryId:
-              (document as { categoryId?: number | null }).categoryId ?? null,
-            publishedAt:
-              (document as { publishedAt?: string | Date | null })
-                .publishedAt ?? null,
-          },
-          score,
-          matches: {
-            title: titleHighlight,
-            summary: summaryHighlight,
-          },
+          id: String(doc.id ?? ""),
+          slug: String(doc.slug ?? ""),
+          title: String(doc.title ?? ""),
+          summary: String(doc.summary ?? ""),
+          tags: (doc.tags as string[]) ?? [],
+          cover: (doc.cover as string) ?? null,
+          accessType:
+            (doc.accessType as "free" | "member" | "paid" | null) ?? null,
+          categoryName: (doc.categoryName as string | null) ?? null,
+          categoryId: (doc.categoryId as number | null) ?? null,
+          publishedAt:
+            (doc.publishedAt as string | Date | null) ?? null,
+          score: hit.score,
         };
-      })
-  );
+      });
+  }
+
+  return matched.slice(0, limit).map((doc) => {
+    const titleHighlight = buildSnippet({
+      text: doc.title,
+      terms: [],
+      fallbackTerm: data.q,
+    });
+    const summaryHighlight = buildSnippet({
+      text: doc.summary,
+      terms: [],
+      fallbackTerm: data.q,
+    });
+
+    return {
+      post: {
+        id: doc.id,
+        slug: doc.slug,
+        title: doc.title,
+        summary: doc.summary,
+        tags: doc.tags,
+        cover: doc.cover,
+        accessType: doc.accessType,
+        categoryName: doc.categoryName,
+        categoryId: doc.categoryId,
+        publishedAt: doc.publishedAt,
+      },
+      score: doc.score,
+      matches: {
+        title: titleHighlight,
+        summary: summaryHighlight,
+      },
+    };
+  });
 }
 
 export async function upsert(
