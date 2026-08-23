@@ -4,9 +4,7 @@ import { toast } from "sonner";
 import { uploadImageFn } from "@/features/media/api/media.api";
 import { MEDIA_KEYS } from "@/features/media/queries";
 import { classifyUploadFile } from "@/features/media/media.schema";
-import { getSystemConfigFn } from "@/features/config/api/config.api";
-import { applyWatermark } from "@/features/media/utils/watermark.client";
-import { useQuery } from "@tanstack/react-query";
+import { processFileWithWatermark } from "@/features/media/utils/upload-with-watermark.client";
 import { formatBytes } from "@/lib/utils";
 import { m } from "@/paraglide/messages";
 import type { UploadItem } from "../types";
@@ -28,29 +26,11 @@ export function useMediaUpload() {
     };
   }, []);
 
-  // 读取水印配置（缓存），用于上传时前端烧录
-  const { data: siteConfig } = useQuery({
-    queryKey: ["systemConfig", "watermark"],
-    queryFn: () => getSystemConfigFn(),
-    staleTime: 60_000,
-  });
-
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      let toUpload = file;
-      try {
-        let wm = siteConfig?.watermark;
-        if (!wm) {
-          // 配置尚未加载时兜底取一次，确保首张图也带水印
-          wm = (await getSystemConfigFn())?.watermark;
-        }
-        if (wm?.enabled) {
-          toUpload = await applyWatermark(file, wm);
-        }
-      } catch {
-        // 配置读取失败则上传原图，不影响上传流程
-      }
+      // 统一走压缩+水印处理（两者独立开关，互不影响）
+      const toUpload = await processFileWithWatermark(file);
       const formData = new FormData();
       formData.append("image", toUpload);
       return await uploadImageFn({ data: formData });
