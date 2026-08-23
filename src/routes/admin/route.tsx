@@ -171,28 +171,38 @@ function AdminLayout() {
     };
 
     const interval = setInterval(poll, 2000);
-    // 立即执行一次
-    poll();
+    // 延迟首次轮询，等 Workflow 写入 running 状态
+    const firstPollTimer = setTimeout(poll, 2000);
 
     return () => {
       active = false;
       clearInterval(interval);
+      clearTimeout(firstPollTimer);
     };
   }, [isRebuildingIndex]);
 
   const handleConfirmRebuildIndex = async () => {
     setShowRebuildIndexConfirm(false);
-    setIsRebuildingIndex(true);
     setRebuildProgress(null);
+    // 先显示 loading toast，再触发 Workflow，最后启动轮询
+    // 避免轮询先于 Workflow 执行、读到上次遗留的 completed 状态导致提前结束
+    rebuildToastId.current = toast.loading(
+      m.settings_maintenance_search_toast_started(),
+    );
     try {
       await buildSearchIndexFn();
-      // 用 loading toast 持续显示，后续轮询会更新同一条 toast
-      rebuildToastId.current = toast.loading(
-        m.settings_maintenance_search_toast_started(),
-      );
+      // Workflow 已创建，启动轮询
+      setIsRebuildingIndex(true);
     } catch (error) {
-      setIsRebuildingIndex(false);
-      toast.error(error instanceof Error ? error.message : "索引重建启动失败");
+      if (rebuildToastId.current !== undefined) {
+        toast.error(
+          error instanceof Error ? error.message : "索引重建启动失败",
+          { id: rebuildToastId.current },
+        );
+        rebuildToastId.current = undefined;
+      } else {
+        toast.error(error instanceof Error ? error.message : "索引重建启动失败");
+      }
     }
   };
 
