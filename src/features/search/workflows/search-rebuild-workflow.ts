@@ -13,6 +13,7 @@ import {
 } from "@/features/search/model/store";
 import { CONTENT_SLICE, SNIPPET_SLICE } from "@/features/search/search.constants";
 import { getDb } from "@/lib/db";
+import { purgeCDNCache, purgeInnerCache } from "@/lib/invalidate";
 import {
   CategoriesTable,
   PostCategoriesTable,
@@ -118,7 +119,15 @@ export class SearchRebuildWorkflow extends WorkflowEntrypoint<Env, Params> {
             lte(PostsTable.publishedAt, new Date()),
           ),
         );
-      return row?.count ?? 0;
+      const countResult = row?.count ?? 0;
+      await setRebuildStatus(this.env, {
+        status: "running",
+        total: countResult,
+        processed: 0,
+        startTime: start,
+        currentStep: `正在统计文章数量...`,
+      });
+      return countResult;
     });
 
     if (total === 0) {
@@ -148,6 +157,7 @@ export class SearchRebuildWorkflow extends WorkflowEntrypoint<Env, Params> {
         total,
         processed: 0,
         startTime: start,
+        currentStep: `正在初始化索引...`,
       });
     });
 
@@ -255,6 +265,7 @@ export class SearchRebuildWorkflow extends WorkflowEntrypoint<Env, Params> {
             total,
             processed,
             startTime: start,
+            currentStep: `正在处理第 ${i + 1}/${batchCount} 批 (${processed}/${total})`,
           });
 
           return { processed };
@@ -262,13 +273,35 @@ export class SearchRebuildWorkflow extends WorkflowEntrypoint<Env, Params> {
       );
     }
 
-    // Final Step: 持久化到正式 KV，清理临时数据
+    // Final Step: 持久化到正式 KV，清理临时数据，清除搜索缓存
     const result = await step.do("finalize", async () => {
       const searchDb = await loadTmpOramaDb(this.env);
       if (!searchDb) throw new Error("临时索引丢失，请重新触发重建");
 
       await persistOramaDb(this.env, searchDb, total);
       await deleteTmpOramaDb(this.env);
+
+      await setRebuildStatus(this.env, {
+        status: "running",
+        total,
+        processed: total,
+        startTime: start,
+        currentStep: `正在清除搜索缓存...`,
+      });
+
+      // 清除搜索 API 的 CDN 缓存和 Worker 内层缓存，
+      // 否则重建后访客仍命中旧缓存拿到空结果（搜索 API 设了 immutable 头）
+      try {
+        await purgeCDNCache(this.env, {
+          prefixes: ["/api/search", "/search"],
+        });
+        await purgeInnerCache(this.env, []);
+      } catch (err) {
+        console.warn(
+          `[search] cache purge after rebuild failed:`,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
 
       const duration = Date.now() - start;
       await setRebuildStatus(this.env, {
@@ -277,6 +310,7 @@ export class SearchRebuildWorkflow extends WorkflowEntrypoint<Env, Params> {
         processed: total,
         startTime: start,
         duration,
+        currentStep: `重建完成`,
       });
 
       console.log(

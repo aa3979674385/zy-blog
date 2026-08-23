@@ -5,7 +5,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { ArrowUpRight, Database, Menu, RotateCcw, Settings } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SideBar } from "@/components/admin/side-bar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -102,6 +102,8 @@ function AdminLayout() {
   const [isResettingCache, setIsResettingCache] = useState(false);
   const [isRebuildingIndex, setIsRebuildingIndex] = useState(false);
   const [rebuildProgress, setRebuildProgress] = useState<string | null>(null);
+  // 保持 loading toast 的 ID，用于持续更新同一条 toast
+  const rebuildToastId = useRef<string | number | undefined>(undefined);
 
   const handleConfirmResetCache = async () => {
     setIsResettingCache(true);
@@ -131,33 +133,44 @@ function AdminLayout() {
         if (!active || !status) return;
 
         if (status.status === "running") {
-          setRebuildProgress(
-            `${status.processed}/${status.total}`,
-          );
+          const stepText = status.currentStep ?? `${status.processed}/${status.total}`;
+          setRebuildProgress(stepText);
+          // 持续更新同一条 loading toast
+          if (rebuildToastId.current !== undefined) {
+            toast.loading(stepText, { id: rebuildToastId.current });
+          }
         } else if (status.status === "completed") {
           setIsRebuildingIndex(false);
           setRebuildProgress(null);
-          toast.success(
-            m.settings_maintenance_search_toast_success({
-              duration: status.duration ?? 0,
-              indexed: status.total ?? 0,
-            }),
-          );
+          const successMsg = m.settings_maintenance_search_toast_success({
+            duration: status.duration ?? 0,
+            indexed: status.total ?? 0,
+          });
+          if (rebuildToastId.current !== undefined) {
+            toast.success(successMsg, { id: rebuildToastId.current });
+            rebuildToastId.current = undefined;
+          } else {
+            toast.success(successMsg);
+          }
         } else if (status.status === "failed") {
           setIsRebuildingIndex(false);
           setRebuildProgress(null);
-          toast.error(
-            status.error
-              ? `${m.settings_maintenance_search_toast_error()}: ${status.error}`
-              : m.settings_maintenance_search_toast_error(),
-          );
+          const errorMsg = status.error
+            ? `${m.settings_maintenance_search_toast_error()}: ${status.error}`
+            : m.settings_maintenance_search_toast_error();
+          if (rebuildToastId.current !== undefined) {
+            toast.error(errorMsg, { id: rebuildToastId.current });
+            rebuildToastId.current = undefined;
+          } else {
+            toast.error(errorMsg);
+          }
         }
       } catch {
         // 轮询失败静默忽略，下次重试
       }
     };
 
-    const interval = setInterval(poll, 3000);
+    const interval = setInterval(poll, 2000);
     // 立即执行一次
     poll();
 
@@ -173,7 +186,10 @@ function AdminLayout() {
     setRebuildProgress(null);
     try {
       await buildSearchIndexFn();
-      toast.success(m.settings_maintenance_search_toast_started());
+      // 用 loading toast 持续显示，后续轮询会更新同一条 toast
+      rebuildToastId.current = toast.loading(
+        m.settings_maintenance_search_toast_started(),
+      );
     } catch (error) {
       setIsRebuildingIndex(false);
       toast.error(error instanceof Error ? error.message : "索引重建启动失败");

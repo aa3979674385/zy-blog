@@ -186,6 +186,8 @@ export interface RebuildStatus {
   startTime: number;
   duration?: number;
   error?: string;
+  /** 当前步骤描述，用于前端展示进度 */
+  currentStep?: string;
 }
 
 export async function setRebuildStatus(
