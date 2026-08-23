@@ -75,11 +75,14 @@ export async function search(
   // 不依赖 Orama 的 BM25 相关性排序——BM25 会把标题长、匹配字占比低的文档排到后面，
   // 导致单字搜索时（如「黑」）低相关性文档被 limit 截断而漏召回。
   // 3000 篇文章的标题扫描在内存中是微秒级，性能无忧。
+  // Orama v3 内部结构：db.data.docs.docs 是实际文档存储（Record<internalId, Document>）
   const allDocs = (
     db as unknown as {
-      data?: { docs?: Record<string, Record<string, unknown>> };
+      data?: {
+        docs?: { docs?: Record<string, Record<string, unknown>> };
+      };
     }
-  ).data?.docs;
+  ).data?.docs?.docs;
 
   let matched: Array<{
     id: string;
