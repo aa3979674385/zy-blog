@@ -97,6 +97,7 @@ export function PublicLayout({
           src={siteConfig.theme.mytheme.homeBg}
           alt="banner"
           fetchPriority="high"
+          decoding="async"
           className="w-full h-full object-cover object-center"
         />
       </div>

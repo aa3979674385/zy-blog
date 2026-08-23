@@ -67,6 +67,7 @@ export function GridPostCard({ post, showPinned = true }: GridPostCardProps) {
               src={cover}
               alt={post.title}
               loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
             />
           ) : (
@@ -114,6 +115,7 @@ export function GridPostCard({ post, showPinned = true }: GridPostCardProps) {
             <img
               src={avatar}
               alt={authorName}
+              decoding="async"
               className="h-full w-full object-cover"
             />
           ) : (
