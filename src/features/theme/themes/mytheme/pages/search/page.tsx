@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import type { SearchPageProps } from "@/features/theme/contract/pages";
 import { m } from "@/paraglide/messages";
 import { GridPostCard } from "../../components/grid-post-card";
+import { Pagination } from "@/features/theme/components/pagination";
 import type { PostItem } from "@/features/posts/schema/posts.schema";
 
 export function SearchPage({
@@ -11,6 +12,9 @@ export function SearchPage({
   isSearching,
   onQueryChange,
   onBack,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: SearchPageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -119,6 +123,14 @@ export function SearchPage({
               />
             ))}
           </div>
+        )}
+
+        {results.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
         )}
       </div>
     </div>

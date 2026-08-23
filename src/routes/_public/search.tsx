@@ -13,6 +13,7 @@ import { m } from "@/paraglide/messages";
 
 const searchSchema = z.object({
   q: z.string().optional(),
+  page: z.number().int().positive().optional().default(1).catch(1),
 });
 
 export const Route = createFileRoute("/_public/search")({
@@ -48,12 +49,14 @@ function SearchRoute() {
 
   const debouncedQuery = useDebounce(query, 300);
 
+  // 搜索词变化时重置到第 1 页
   useEffect(() => {
     if (debouncedQuery !== (search.q || "")) {
       navigate({
         search: (prev: ReturnType<typeof Route.useSearch>) => ({
           ...prev,
           q: debouncedQuery || undefined,
+          page: 1,
         }),
         replace: true,
       });
@@ -65,14 +68,22 @@ function SearchRoute() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: results, isLoading: isSearching } = useQuery({
-    ...searchDocsQueryOptions(debouncedQuery, meta?.version || "init"),
+  const { data, isLoading: isSearching } = useQuery({
+    ...searchDocsQueryOptions(
+      debouncedQuery,
+      meta?.version || "init",
+      search.page,
+    ),
     enabled: debouncedQuery.length > 0 && !!meta?.version,
     staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
 
-  const searchResults = useMemo(() => results ?? [], [results]);
+  const searchResults = useMemo(
+    () => data?.results ?? [],
+    [data],
+  );
+  const totalPages = data?.totalPages ?? 1;
 
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
@@ -86,6 +97,17 @@ function SearchRoute() {
     navigate({ to: "/" });
   };
 
+  const handlePageChange = (page: number) => {
+    navigate({
+      search: (prev: ReturnType<typeof Route.useSearch>) => ({
+        ...prev,
+        page,
+      }),
+    });
+    // 滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <theme.SearchPage
       query={query}
@@ -94,6 +116,9 @@ function SearchRoute() {
       onQueryChange={handleQueryChange}
       onSelectPost={handleSelectPost}
       onBack={handleBack}
+      currentPage={search.page}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
     />
   );
 }

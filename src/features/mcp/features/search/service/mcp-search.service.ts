@@ -12,6 +12,7 @@ export async function searchPosts(
   return SearchService.search(context, {
     q: data.q,
     limit: data.limit ?? 10,
+    page: 1,
     v: version?.version ?? "init",
   });
 }

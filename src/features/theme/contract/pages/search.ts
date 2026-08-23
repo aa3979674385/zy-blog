@@ -30,4 +30,7 @@ export interface SearchPageProps {
   onQueryChange: (query: string) => void;
   onSelectPost: (post: { id: string | number; slug: string }) => void;
   onBack: () => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }

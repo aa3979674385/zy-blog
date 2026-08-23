@@ -69,7 +69,9 @@ export async function search(
 ) {
   const db = await getOramaDb(context.env, waitUntil);
   const query = data.q.toLowerCase();
-  const limit = Math.min(data.limit, 25);
+  const page = Math.max(1, data.page);
+  const limit = Math.min(data.limit, 50);
+  const offset = (page - 1) * limit;
 
   // 全量线性扫描所有文档标题，做子串匹配。
   // 不依赖 Orama 的 BM25 相关性排序——BM25 会把标题长、匹配字占比低的文档排到后面，
@@ -118,13 +120,15 @@ export async function search(
           (doc.publishedAt as string | Date | null) ?? null,
         score: 1,
       }))
-      // 排序：匹配位置靠前优先（用户搜的词出现在标题开头更相关），
-      // 其次标题短的优先（匹配密度高）
+      // 排序：按发布时间降序（最新优先），无发布时间的排到最后
       .sort((a, b) => {
-        const posA = a.title.toLowerCase().indexOf(query);
-        const posB = b.title.toLowerCase().indexOf(query);
-        if (posA !== posB) return posA - posB;
-        return a.title.length - b.title.length;
+        const tsA = a.publishedAt
+          ? new Date(a.publishedAt).getTime()
+          : 0;
+        const tsB = b.publishedAt
+          ? new Date(b.publishedAt).getTime()
+          : 0;
+        return tsB - tsA;
       });
   } else {
     // 降级：无法直接访问文档内部结构时，回退到 Orama 搜索
@@ -154,10 +158,22 @@ export async function search(
             (doc.publishedAt as string | Date | null) ?? null,
           score: hit.score,
         };
+      })
+      .sort((a, b) => {
+        const tsA = a.publishedAt
+          ? new Date(a.publishedAt).getTime()
+          : 0;
+        const tsB = b.publishedAt
+          ? new Date(b.publishedAt).getTime()
+          : 0;
+        return tsB - tsA;
       });
   }
 
-  return matched.slice(0, limit).map((doc) => {
+  const total = matched.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  const paged = matched.slice(offset, offset + limit).map((doc) => {
     const titleHighlight = buildSnippet({
       text: doc.title,
       terms: [],
@@ -189,6 +205,8 @@ export async function search(
       },
     };
   });
+
+  return { results: paged, total, page, totalPages };
 }
 
 export async function upsert(

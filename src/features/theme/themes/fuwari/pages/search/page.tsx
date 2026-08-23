@@ -2,6 +2,7 @@ import { ArrowLeft, Keyboard, Loader2, Search } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { SearchPageProps } from "@/features/theme/contract/pages";
 import { m } from "@/paraglide/messages";
+import { Pagination } from "@/features/theme/components/pagination";
 
 export function SearchPage({
   query,
@@ -10,6 +11,9 @@ export function SearchPage({
   onQueryChange,
   onSelectPost,
   onBack,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: SearchPageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -157,6 +161,14 @@ export function SearchPage({
         `,
           }}
         />
+
+        {results.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
+        )}
       </div>
     </div>
   );
