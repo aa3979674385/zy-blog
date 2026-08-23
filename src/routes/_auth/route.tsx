@@ -9,16 +9,15 @@ import { useNavigateBack } from "@/hooks/use-navigate-back";
 import { CACHE_CONTROL } from "@/lib/constants";
 
 export const Route = createFileRoute("/_auth")({
+  ssr: false,
   beforeLoad: async ({ context, location }) => {
-    // 被封禁用户访问登录页时，sessionQuery 会因 Better Auth 拦截而抛错；
-    // 这里容错为 null，真正的拦截由根路由 beforeLoad 跳转到 /banned 处理。
-    const session = await context.queryClient
-      .fetchQuery(sessionQuery)
-      .catch(() => null);
-    const isEmailConfigured =
-      await context.queryClient.fetchQuery(emailConfiguredQuery);
-    const authSettings =
-      await context.queryClient.fetchQuery(authSettingsQuery);
+    // 并行查询：session / email配置 / 登录方式设置 同时发起，不再串行等待
+    const [sessionResult, isEmailConfigured, authSettings] = await Promise.all([
+      context.queryClient.fetchQuery(sessionQuery).catch(() => null),
+      context.queryClient.fetchQuery(emailConfiguredQuery),
+      context.queryClient.fetchQuery(authSettingsQuery),
+    ]);
+    const session = sessionResult;
     const authMethod = authSettings.methods; // "email" | "oauth" | "both"
 
     // 邮箱表单显隐只由「登录方式」开关决定，不再依赖 SMTP 是否已配置

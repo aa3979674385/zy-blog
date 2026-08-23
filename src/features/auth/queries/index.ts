@@ -23,6 +23,8 @@ export const sessionQuery = queryOptions({
     const session = await getSessionFn();
     return session;
   },
+  // session 是用户登录状态，1 分钟内不需要重复查询
+  staleTime: 60 * 1000,
 });
 
 export const emailConfiguredQuery = queryOptions({
@@ -31,6 +33,8 @@ export const emailConfiguredQuery = queryOptions({
     const isEmailConfigured = await getIsEmailConfiguredFn();
     return isEmailConfigured;
   },
+  // 邮箱配置很少变，10 分钟缓存
+  staleTime: 10 * 60 * 1000,
 });
 
 export const authSettingsQuery = queryOptions({
@@ -39,4 +43,6 @@ export const authSettingsQuery = queryOptions({
     const settings = await getAuthSettingsFn();
     return settings;
   },
+  // 登录方式设置很少变，10 分钟缓存
+  staleTime: 10 * 60 * 1000,
 });
