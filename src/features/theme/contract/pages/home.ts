@@ -18,7 +18,8 @@ export interface HomeCategoryTabConfig {
 }
 
 export interface HomePageProps {
-  posts: Array<PostItem>;
+  /** 最新发布文章列表（已弃用：mytheme 组件内部自行查询，保留兼容） */
+  posts?: Array<PostItem>;
   pinnedPosts?: Array<PostItem>;
   popularPosts?: Array<PostItem>;
   /** 首页"最新发布"最多显示的卡片数量（后台 recentPostsLimit 设置） */
