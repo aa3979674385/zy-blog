@@ -18,7 +18,11 @@ import {
   getPostRevisionFn,
   listPostRevisionsFn,
 } from "../api/post-revisions.admin.api";
-import { findPostByIdFn } from "../api/posts.admin.api";
+import {
+  findPostByIdFn,
+  getCategoriesForPostFilterFn,
+  getUncategorizedCountForPostFilterFn,
+} from "../api/posts.admin.api";
 import {
   findPostBySlugFn,
   findPostByIdPublicFn,
@@ -418,5 +422,23 @@ export function popularPostsQuery(limit?: number) {
       if (!res.ok) throw new Error("Failed to fetch popular posts");
       return PostItemSchema.array().parse(await res.json());
     },
+  });
+}
+
+/** 文章筛选器用的全量分类查询（post.view 权限） */
+export function postFilterCategoriesQueryOptions() {
+  return queryOptions({
+    queryKey: ["postFilter", "categories"],
+    queryFn: () => getCategoriesForPostFilterFn(),
+    staleTime: 60_000,
+  });
+}
+
+/** 文章筛选器用的未分类计数查询（post.view 权限） */
+export function postFilterUncategorizedCountQueryOptions() {
+  return queryOptions({
+    queryKey: ["postFilter", "uncategorizedCount"],
+    queryFn: () => getUncategorizedCountForPostFilterFn(),
+    staleTime: 60_000,
   });
 }

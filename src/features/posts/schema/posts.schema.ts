@@ -6,8 +6,8 @@ import {
 import { z } from "zod";
 import { TagSelectSchema } from "@/features/tags/tags.schema";
 import { CategorySelectSchema } from "@/features/categories/categories.schema";
-import type { Category, Post, PostStatus, Tag } from "@/lib/db/schema";
 import { POST_STATUSES, PostsTable } from "@/lib/db/schema";
+import type { Category, Post, Tag } from "@/lib/db/schema";
 import { NullableJsonContentSchema } from "./json-content.schema";
 
 // Date fields need to accept both Date objects and ISO strings (for JSON serialization)
@@ -96,9 +96,11 @@ export const GetPostsCursorInputSchema = z.object({
 
 /** 公开文章列表可排序字段（对应 posts 表已建索引/常用列） */
 export const POST_SORT_FIELDS = ["publishedAt", "updatedAt", "createdAt", "title"] as const;
-export type PostSortField = (typeof POST_SORT_FIELDS)[number];
+export const PostSortFieldSchema = z.enum(POST_SORT_FIELDS);
+export type PostSortField = z.infer<typeof PostSortFieldSchema>;
 export const POST_SORT_DIRECTIONS = ["asc", "desc"] as const;
-export type PostSortDirection = (typeof POST_SORT_DIRECTIONS)[number];
+export const PostSortDirectionSchema = z.enum(POST_SORT_DIRECTIONS);
+export type PostSortDirection = z.infer<typeof PostSortDirectionSchema>;
 
 export const GetPostsPagedInputSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -132,6 +134,8 @@ export type GetPostsPagedInput = z.infer<typeof GetPostsPagedInputSchema>;
 export type FindPostBySlugInput = z.infer<typeof FindPostBySlugInputSchema>;
 export type FindRelatedPostsInput = z.infer<typeof FindRelatedPostsInputSchema>;
 
+export const PostStatusSchema = z.enum(POST_STATUSES);
+
 // Admin API Schemas
 export const GenerateSlugInputSchema = z.object({
   title: z.string().optional(),
@@ -139,15 +143,17 @@ export const GenerateSlugInputSchema = z.object({
 });
 
 export const GetPostsInputSchema = z.object({
-  offset: z.number().optional(),
-  limit: z.number().optional(),
-  status: z.custom<PostStatus>().optional(),
-  publicOnly: z.boolean().optional(),
+  offset: z.number().int().min(0).optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+  status: PostStatusSchema.optional(),
+  publicOnly: z.coerce.boolean().optional(),
   search: z.string().optional(),
   sortDir: z.enum(["ASC", "DESC"]).optional(),
   sortBy: z.enum(["publishedAt", "updatedAt"]).optional(),
-  /** 按分类过滤（后台文章管理页） */
-  categoryId: z.number().int().optional(),
+  /** 按分类筛选 */
+  categoryId: z.coerce.number().int().optional(),
+  /** 未分类视图（不与 categoryId 同时使用） */
+  uncategorized: z.coerce.boolean().optional(),
 });
 
 export const GetPostsCountInputSchema = GetPostsInputSchema.omit({

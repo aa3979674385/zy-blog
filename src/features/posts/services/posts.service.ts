@@ -300,6 +300,7 @@ export async function getPosts(context: DbContext, data: GetPostsInput) {
     sortDir: data.sortDir,
     sortBy: data.sortBy,
     categoryId: data.categoryId,
+    uncategorized: data.uncategorized,
   });
 }
 
@@ -312,6 +313,7 @@ export async function getPostsCount(
     publicOnly: data.publicOnly,
     search: data.search,
     categoryId: data.categoryId,
+    uncategorized: data.uncategorized,
   });
 }
 

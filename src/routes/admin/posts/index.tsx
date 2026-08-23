@@ -24,6 +24,8 @@ const searchSchema = z.object({
   search: z.string().optional().default("").catch(""),
   /** 按分类筛选 */
   categoryId: z.number().int().optional(),
+  /** 未分类视图：仅显示未归入任何分类的文章 */
+  uncategorized: z.coerce.boolean().optional(),
 });
 
 export type PostsSearchParams = z.infer<typeof searchSchema>;
@@ -36,7 +38,7 @@ export const Route = createFileRoute("/admin/posts/")({
 
 function PostManagerPage() {
   const navigate = useNavigate();
-  const { page, status, sortDir, sortBy, search, categoryId } =
+  const { page, status, sortDir, sortBy, search, categoryId, uncategorized } =
     Route.useSearch();
 
   const updateSearch = (updates: Partial<PostsSearchParams>) => {
@@ -48,13 +50,29 @@ function PostManagerPage() {
         sortDir: updates.sortDir ?? sortDir,
         sortBy: updates.sortBy ?? sortBy,
         search: updates.search ?? search,
-        categoryId: updates.categoryId ?? categoryId,
+        // 互斥：categoryId 与 uncategorized 不能同时存在
+        categoryId:
+          updates.uncategorized !== undefined
+            ? undefined
+            : updates.categoryId !== undefined
+              ? updates.categoryId
+              : categoryId,
+        uncategorized:
+          updates.categoryId !== undefined
+            ? undefined
+            : updates.uncategorized !== undefined
+              ? updates.uncategorized
+              : uncategorized,
       },
     });
   };
 
   const handleCategoryChange = (newCategoryId?: number) => {
-    updateSearch({ categoryId: newCategoryId, page: 1 });
+    updateSearch({ categoryId: newCategoryId, uncategorized: undefined, page: 1 });
+  };
+
+  const handleUncategorizedToggle = () => {
+    updateSearch({ uncategorized: true, categoryId: undefined, page: 1 });
   };
 
   const handlePageChange = (newPage: number) => {
@@ -89,6 +107,7 @@ function PostManagerPage() {
         sortBy: "updatedAt",
         search: "",
         categoryId: undefined,
+        uncategorized: undefined,
       },
     });
   };
@@ -101,11 +120,13 @@ function PostManagerPage() {
       sortBy={sortBy}
       search={search}
       categoryId={categoryId}
+      uncategorized={uncategorized}
       onPageChange={handlePageChange}
       onStatusChange={handleStatusChange}
       onSortUpdate={handleSortUpdate}
       onSearchChange={handleSearchChange}
       onCategoryChange={handleCategoryChange}
+      onUncategorizedToggle={handleUncategorizedToggle}
       onResetFilters={handleResetFilters}
     />
   );

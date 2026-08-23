@@ -3,7 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import Dropdown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
-import { categoriesQueryOptions } from "@/features/categories/queries";
+import {
+  postFilterCategoriesQueryOptions,
+  postFilterUncategorizedCountQueryOptions,
+} from "@/features/posts/queries";
 import { m } from "@/paraglide/messages";
 import type { SortDirection, SortField, StatusFilter } from "../types";
 import { STATUS_FILTERS } from "../types";
@@ -18,7 +21,10 @@ interface PostsToolbarProps {
   onSortUpdate: (update: { dir?: SortDirection; sortBy?: SortField }) => void;
   /** 按分类筛选 */
   categoryId?: number;
+  /** 未分类视图 */
+  uncategorized?: boolean;
   onCategoryChange: (categoryId?: number) => void;
+  onUncategorizedToggle: () => void;
   onResetFilters: () => void;
 }
 
@@ -31,11 +37,18 @@ export function PostsToolbar({
   sortBy,
   onSortUpdate,
   categoryId,
+  uncategorized,
   onCategoryChange,
+  onUncategorizedToggle,
   onResetFilters,
 }: PostsToolbarProps) {
-  // 分类筛选列表（公开分类接口）
-  const { data: categories = [] } = useQuery(categoriesQueryOptions);
+  // 后台全量分类（带文章计数，不过滤空分类）
+  const { data: categories = [] } = useQuery(
+    postFilterCategoriesQueryOptions(),
+  );
+  const { data: uncategorizedCount = 0 } = useQuery(
+    postFilterUncategorizedCountQueryOptions(),
+  );
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
 
@@ -44,7 +57,8 @@ export function PostsToolbar({
     sortDir !== "DESC" ||
     sortBy !== "updatedAt" ||
     searchTerm !== "" ||
-    categoryId !== undefined;
+    categoryId !== undefined ||
+    uncategorized;
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 mb-8 items-stretch lg:items-center w-full border-b border-border/30 pb-8">
@@ -130,7 +144,7 @@ export function PostsToolbar({
                     h-10 border-border/30 hover:border-foreground
                     flex items-center gap-2 text-[11px] font-medium transition-all px-4 rounded-none shadow-none
                     ${
-                      categoryId !== undefined
+                      categoryId !== undefined || uncategorized
                         ? "bg-foreground text-background border-foreground"
                         : "bg-transparent text-muted-foreground hover:text-foreground"
                     }
@@ -138,23 +152,35 @@ export function PostsToolbar({
             >
               <FolderOpen size={14} strokeWidth={1.5} />
               <span className="uppercase tracking-widest font-mono max-w-32 truncate">
-                {selectedCategory ? selectedCategory.name : "全部分类"}
+                {uncategorized
+                  ? "未分类"
+                  : selectedCategory
+                    ? selectedCategory.name
+                    : "全部分类"}
               </span>
             </Button>
           }
           items={[
             {
               label: "全部分类",
-              onClick: () => onCategoryChange(undefined),
-              isActive: categoryId === undefined,
+              onClick: () => {
+                onCategoryChange(undefined);
+              },
+              isActive: categoryId === undefined && !uncategorized,
               className: "font-mono",
             },
             ...categories.map((c) => ({
-              label: c.name,
+              label: `${c.name} (${c.postCount ?? 0})`,
               onClick: () => onCategoryChange(c.id),
               isActive: categoryId === c.id,
               className: "font-mono",
             })),
+            {
+              label: `未分类 (${uncategorizedCount})`,
+              onClick: onUncategorizedToggle,
+              isActive: uncategorized,
+              className: "font-mono",
+            },
           ]}
         />
 

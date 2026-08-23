@@ -44,7 +44,11 @@ interface PostManagerProps {
   onResetFilters: () => void;
   /** 按分类筛选 */
   categoryId?: number;
+  /** 未分类视图 */
+  uncategorized?: boolean;
   onCategoryChange: (categoryId?: number) => void;
+  /** 切换未分类视图 */
+  onUncategorizedToggle: () => void;
 }
 
 export function PostManager({
@@ -54,11 +58,13 @@ export function PostManager({
   sortBy,
   search,
   categoryId,
+  uncategorized,
   onPageChange,
   onStatusChange,
   onSortUpdate,
   onSearchChange,
   onCategoryChange,
+  onUncategorizedToggle,
   onResetFilters,
 }: PostManagerProps) {
   const navigate = useNavigate();
@@ -91,6 +97,7 @@ export function PostManager({
     sortBy,
     search: debouncedSearch,
     categoryId,
+    uncategorized,
   });
 
   // Create empty post mutation
@@ -161,7 +168,9 @@ export function PostManager({
           sortBy={sortBy}
           onSortUpdate={onSortUpdate}
           categoryId={categoryId}
+          uncategorized={uncategorized}
           onCategoryChange={onCategoryChange}
+          onUncategorizedToggle={onUncategorizedToggle}
           onResetFilters={() => {
             setSearchInput("");
             onResetFilters();

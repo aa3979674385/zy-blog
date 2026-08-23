@@ -24,6 +24,8 @@ interface UsePostsOptions {
   search: string;
   /** 按分类过滤（undefined = 全部） */
   categoryId?: number;
+  /** 未分类视图（与 categoryId 互斥） */
+  uncategorized?: boolean;
 }
 
 export function usePosts({
@@ -33,6 +35,7 @@ export function usePosts({
   sortBy,
   search,
   categoryId,
+  uncategorized,
 }: UsePostsOptions) {
   const apiStatus = statusFilterToApi(status);
 
@@ -44,12 +47,14 @@ export function usePosts({
     sortBy,
     search: search || undefined,
     categoryId: categoryId || undefined,
+    uncategorized: uncategorized || undefined,
   };
 
   const countParams = {
     status: apiStatus,
     search: search || undefined,
     categoryId: categoryId || undefined,
+    uncategorized: uncategorized || undefined,
   };
 
   const postsQuery = useQuery({

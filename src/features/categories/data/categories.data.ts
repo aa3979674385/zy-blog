@@ -265,7 +265,31 @@ export async function getPublishedPostsByCategoryId(db: DB, categoryId: number) 
 /**
  * Count posts that belong to NO category (the "未分类" fallback bucket).
  */
-export async function countUncategorizedPosts(db: DB) {
+export async function countUncategorizedPosts(
+  db: DB,
+  options: { publicOnly?: boolean } = {},
+) {
+  const { publicOnly = true } = options;
+
+  if (publicOnly) {
+    const result = await db
+      .select({ count: count() })
+      .from(PostsTable)
+      .leftJoin(
+        PostCategoriesTable,
+        eq(PostsTable.id, PostCategoriesTable.postId),
+      )
+      .where(
+        and(
+          eq(PostsTable.status, "published"),
+          sql`date(${PostsTable.publishedAt}, 'unixepoch') <= date('now')`,
+          sql`${PostCategoriesTable.postId} IS NULL`,
+        ),
+      );
+    return result[0]?.count ?? 0;
+  }
+
+  // 后台模式：统计所有文章（含草稿）
   const result = await db
     .select({ count: count() })
     .from(PostsTable)
@@ -273,13 +297,7 @@ export async function countUncategorizedPosts(db: DB) {
       PostCategoriesTable,
       eq(PostsTable.id, PostCategoriesTable.postId),
     )
-    .where(
-      and(
-        eq(PostsTable.status, "published"),
-        sql`date(${PostsTable.publishedAt}, 'unixepoch') <= date('now')`,
-        sql`${PostCategoriesTable.postId} IS NULL`,
-      ),
-    );
+    .where(sql`${PostCategoriesTable.postId} IS NULL`);
   return result[0]?.count ?? 0;
 }
 

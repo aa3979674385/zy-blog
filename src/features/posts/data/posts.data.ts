@@ -73,7 +73,7 @@ export async function insertPost(db: DB, data: typeof PostsTable.$inferInsert) {
   return post;
 }
 
-export async function getPosts(
+  export async function getPosts(
   db: DB,
   options: {
     offset?: number;
@@ -85,6 +85,8 @@ export async function getPosts(
     sortBy?: SortField;
     /** 按分类过滤（后台文章管理页） */
     categoryId?: number;
+    /** 未分类视图：仅返回未归入任何分类的文章 */
+    uncategorized?: boolean;
   } = {},
 ) {
   const {
@@ -92,6 +94,8 @@ export async function getPosts(
     limit = DEFAULT_PAGE_SIZE,
     sortDir,
     sortBy,
+    categoryId,
+    uncategorized,
     ...filters
   } = options;
   const whereClause = buildPostWhereClause(filters);
@@ -111,24 +115,42 @@ export async function getPosts(
     isTested: PostsTable.isTested,
   });
 
-  // 按分类过滤时关联 post_categories（保证分页在过滤后生效）
-  const query = options.categoryId
-    ? baseQuery
-        .from(PostsTable)
-        .innerJoin(
-          PostCategoriesTable,
-          and(
-            eq(PostCategoriesTable.postId, PostsTable.id),
-            eq(PostCategoriesTable.categoryId, options.categoryId),
+  let query;
+  if (uncategorized) {
+    // 未分类视图：文章未关联任何分类
+    query = baseQuery
+      .from(PostsTable)
+      .where(
+        and(
+          whereClause,
+          notExists(
+            db
+              .select({ id: PostCategoriesTable.postId })
+              .from(PostCategoriesTable)
+              .where(eq(PostCategoriesTable.postId, PostsTable.id)),
           ),
-        )
-    : baseQuery.from(PostsTable);
+        ),
+      );
+  } else if (categoryId !== undefined) {
+    // 按分类过滤时关联 post_categories（保证分页在过滤后生效）
+    query = baseQuery
+      .from(PostsTable)
+      .innerJoin(
+        PostCategoriesTable,
+        and(
+          eq(PostCategoriesTable.postId, PostsTable.id),
+          eq(PostCategoriesTable.categoryId, categoryId),
+        ),
+      )
+      .where(whereClause);
+  } else {
+    query = baseQuery.from(PostsTable).where(whereClause);
+  }
 
   const posts = await query
     .limit(Math.min(limit, 50))
     .offset(offset)
-    .orderBy(orderByClause)
-    .where(whereClause);
+    .orderBy(orderByClause);
 
   // 附带每篇文章的分类名（后台列表展示用，一次批量查询）
   if (posts.length > 0) {
@@ -168,25 +190,51 @@ export async function getPostsCount(
     search?: string;
     /** 按分类过滤（后台文章管理页） */
     categoryId?: number;
+    /** 未分类视图：仅返回未归入任何分类的文章 */
+    uncategorized?: boolean;
   } = {},
 ) {
-  const whereClause = buildPostWhereClause(options);
-  const query = db
-    .select({ count: count() })
-    .from(PostsTable);
+  const { categoryId, uncategorized, ...rest } = options;
+  const whereClause = buildPostWhereClause(rest);
 
-  const filtered = options.categoryId
-    ? query.innerJoin(
+  if (uncategorized) {
+    const result = await db
+      .select({ count: count() })
+      .from(PostsTable)
+      .where(
+        and(
+          whereClause,
+          notExists(
+            db
+              .select({ id: PostCategoriesTable.postId })
+              .from(PostCategoriesTable)
+              .where(eq(PostCategoriesTable.postId, PostsTable.id)),
+          ),
+        ),
+      );
+    return result[0].count;
+  }
+
+  if (categoryId !== undefined) {
+    const result = await db
+      .select({ count: count() })
+      .from(PostsTable)
+      .innerJoin(
         PostCategoriesTable,
         and(
           eq(PostCategoriesTable.postId, PostsTable.id),
-          eq(PostCategoriesTable.categoryId, options.categoryId),
+          eq(PostCategoriesTable.categoryId, categoryId),
         ),
       )
-    : query;
+      .where(whereClause);
+    return result[0].count;
+  }
 
-  const totalNumberofPosts = await filtered.where(whereClause);
-  return totalNumberofPosts[0].count;
+  const result = await db
+    .select({ count: count() })
+    .from(PostsTable)
+    .where(whereClause);
+  return result[0].count;
 }
 
 /**

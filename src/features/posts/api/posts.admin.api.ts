@@ -11,7 +11,27 @@ import {
   UpdatePostInputSchema,
 } from "@/features/posts/schema/posts.schema";
 import * as PostService from "@/features/posts/services/posts.service";
+import * as CategoryRepo from "@/features/categories/data/categories.data";
 import { requirePermission } from "@/lib/middlewares";
+
+/** 文章筛选用的分类列表（post.view 权限，返回所有分类含文章数） */
+export const getCategoriesForPostFilterFn = createServerFn()
+  .middleware([requirePermission("post.view")])
+  .handler(async ({ context }) => {
+    return await CategoryRepo.getAllCategoriesWithCount(context.db, {
+      sortBy: "sortOrder",
+      sortDir: "asc",
+    });
+  });
+
+/** 文章筛选用的未分类文章数（post.view 权限） */
+export const getUncategorizedCountForPostFilterFn = createServerFn()
+  .middleware([requirePermission("post.view")])
+  .handler(async ({ context }) => {
+    return await CategoryRepo.countUncategorizedPosts(context.db, {
+      publicOnly: false,
+    });
+  });
 
 export const generateSlugFn = createServerFn()
   .middleware([requirePermission("post.create")])
