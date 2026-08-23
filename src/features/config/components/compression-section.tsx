@@ -42,24 +42,49 @@ export function CompressionSection() {
 
       <div className="p-8 space-y-8">
         {/* 总开关 */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">启用图片压缩</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              关闭后图片原样上传，不做任何处理。
-            </p>
-          </div>
-          <Controller
-            control={control}
-            name="compression.enabled"
-            render={({ field }) => (
-              <Checkbox
-                checked={field.value ?? false}
-                onCheckedChange={field.onChange}
-              />
-            )}
-          />
-        </div>
+        <Controller
+          control={control}
+          name="compression.enabled"
+          render={({ field }) => (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  启用图片压缩
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  关闭后图片原样上传，不做任何处理。
+                </p>
+              </div>
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer",
+                  field.value
+                    ? "bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-700"
+                    : "bg-muted/40 border-border/30",
+                )}
+                onClick={() => field.onChange(!field.value)}
+                role="button"
+                aria-label={field.value ? "点击关闭" : "点击开启"}
+              >
+                <span
+                  className={cn(
+                    "text-xs font-semibold transition-colors",
+                    field.value
+                      ? "text-green-700 dark:text-green-400"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {field.value ? "已开启" : "已关闭"}
+                </span>
+                <Checkbox
+                  checked={field.value ?? false}
+                  onCheckedChange={(v) => field.onChange(v)}
+                  className="size-5"
+                />
+              </div>
+            </div>
+          )}
+        />
 
         {/* 最大宽度 */}
         <Controller
