@@ -91,15 +91,28 @@ export function PublicLayout({
       {/* Banner - full width background */}
       <div
         className="absolute left-0 right-0 top-0 z-10 overflow-hidden"
-        style={{ height: `${bannerHeightVh}vh` }}
+        style={{
+          height: `${bannerHeightVh}vh`,
+          backgroundColor: isHomePage ? undefined : "var(--fuwari-page-bg)",
+        }}
       >
-        <img
-          src={siteConfig.theme.mytheme.homeBg}
-          alt="banner"
-          fetchPriority="high"
-          decoding="async"
-          className="w-full h-full object-cover object-center"
-        />
+        {isHomePage ? (
+          <img
+            src={siteConfig.theme.mytheme.homeBg}
+            alt="banner"
+            fetchPriority="high"
+            decoding="async"
+            className="w-full h-full object-cover object-center"
+          />
+        ) : (
+          <div
+            className="w-full h-full"
+            style={{
+              background:
+                "linear-gradient(to bottom, var(--fuwari-primary)/8, var(--fuwari-page-bg))",
+            }}
+          />
+        )}
       </div>
 
       {/* Main content - sits right below the banner */}
