@@ -1,7 +1,8 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import theme from "@theme";
 import type { HomeCategoryTabConfig } from "@/features/theme/contract/pages";
+import type { PostItem } from "@/features/posts/schema/posts.schema";
 import { siteDomainQuery } from "@/features/config/queries";
 import {
   pinnedPostsQuery,
@@ -90,11 +91,27 @@ function HomeRoute() {
   // 这里读取命中缓存，不会触发新的服务端请求。
   const { data: pinnedPosts } = useSuspenseQuery(pinnedPostsQuery);
 
+  // 分类文章查询：SSR 阶段执行（stacked 模式命中 loader 缓存，tabs 模式发起新查询），
+  // 结果注入 categoryTabs.posts 供组件使用。
+  // 保留了 recentPostsQuery / popularPostsQuery 的裁剪（HomePage 组件不使用这两个 prop）。
+  const categoryQueries = useSuspenseQueries({
+    queries: (categoryTabs ?? []).map((tab: HomeCategoryTabConfig) =>
+      postsByCategoryQuery(tab.categoryId, tab.postLimit),
+    ),
+  });
+  const postsByCategoryId = new Map<number, Array<PostItem> | undefined>();
+  (categoryTabs ?? []).forEach((tab: HomeCategoryTabConfig, i: number) => {
+    postsByCategoryId.set(tab.categoryId, categoryQueries[i]?.data);
+  });
+
   return (
     <theme.HomePage
       recentPostsLimit={recentPostsLimit}
       homeCategoryStyle={homeCategoryStyle}
-      categoryTabs={categoryTabs}
+      categoryTabs={(categoryTabs ?? []).map((tab: HomeCategoryTabConfig) => ({
+        ...tab,
+        posts: postsByCategoryId.get(tab.categoryId) ?? tab.posts ?? [],
+      }))}
       pinnedPosts={pinnedPosts}
     />
   );

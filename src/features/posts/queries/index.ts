@@ -194,7 +194,6 @@ export function postsPagedQueryOptions(
       sortBy,
       sortDir,
     }),
-    staleTime: Infinity,
     queryFn: async () => {
       // SSR 阶段直接调 serverFn（服务端内执行，不产生 HTTP 往返）；
       // 客户端水合后走 /api/posts/paged —— 该 API 带 CDN 缓存头（s-maxage=1 年），
@@ -340,7 +339,6 @@ export function postByIdPublicQuery(id: number) {
 export function postsByCategoryQuery(categoryId: number, limit: number) {
   return queryOptions({
     queryKey: ["posts", "by-category", categoryId, limit],
-    staleTime: Infinity,
     queryFn: async () => {
       if (isSSR) {
         const result = await getPostsCursorFn({
