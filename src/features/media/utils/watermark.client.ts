@@ -277,18 +277,21 @@ export async function applyWatermark(
     ctx.globalAlpha = 1;
   }
 
-  // 保留透明通道：PNG / APNG / 静态 GIF 输出 PNG（无损+保透明），其余输出 JPEG 以控体积
+  // 保留透明通道：PNG / APNG / 静态 GIF 输出 PNG（无损+保透明）
+  // WebP 保持 WebP（尊重压缩阶段选择的格式，不强制转 JPEG）
+  // 其余输出 JPEG 以控体积
   const keepPng =
     file.type === "image/png" ||
     file.type === "image/apng" ||
     file.type === "image/gif";
-  const outType = keepPng ? "image/png" : "image/jpeg";
+  const keepWebp = file.type === "image/webp";
+  const outType = keepPng ? "image/png" : keepWebp ? "image/webp" : "image/jpeg";
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, outType, 0.92),
   );
   if (!blob) return file;
 
-  const ext = outType === "image/png" ? ".png" : ".jpg";
+  const ext = outType === "image/png" ? ".png" : outType === "image/webp" ? ".webp" : ".jpg";
   const name = file.name.replace(/\.(png|jpe?g|webp|gif)$/i, ext);
   return new File([blob], name, { type: outType });
 }
