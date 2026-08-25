@@ -117,3 +117,5 @@ resourceDownloadRedirectRoute.get("/:resourceId/:linkIdx", async (c) => {
   c.header("Cache-Control", "no-store, private");
   return c.redirect(target, 302);
 });
+
+export default resourceDownloadRedirectRoute;

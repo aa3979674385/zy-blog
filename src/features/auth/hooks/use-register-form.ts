@@ -45,10 +45,9 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
   const {
     turnstilePending,
     resetTurnstile,
-    isEmailConfigured,
   } = options;
 
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSuccess] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [codeCountdown, setCodeCountdown] = useState(0);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -114,7 +113,7 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json().catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
 
       if (!response.ok) {
         if (data.code === "EMAIL_ALREADY_REGISTERED") {
