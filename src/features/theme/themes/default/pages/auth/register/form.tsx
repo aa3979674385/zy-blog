@@ -8,8 +8,18 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ form }: RegisterFormProps) {
-  const { register, errors, handleSubmit, isSubmitting, turnstilePending } =
-    form;
+  const {
+    register,
+    errors,
+    handleSubmit,
+    isSubmitting,
+    turnstilePending,
+    sendCode,
+    isSendingCode,
+    codeCountdown,
+  } = form;
+
+  const canSendCode = !isSendingCode && codeCountdown === 0 && !isSubmitting;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -44,6 +54,42 @@ export function RegisterForm({ form }: RegisterFormProps) {
           {errors.email && (
             <span className="text-[9px] font-mono text-destructive uppercase tracking-widest mt-1 block">
               {errors.email.message}
+            </span>
+          )}
+        </div>
+
+        {/* Verification Code Field */}
+        <div className="space-y-2 group">
+          <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 group-focus-within:text-foreground transition-colors">
+            {m.register_verification_code()}
+          </label>
+          <div className="flex gap-4 items-center">
+            <Input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              {...register("verificationCode")}
+              className="flex-1 bg-transparent border-0 border-b border-border/40 rounded-none py-3 text-sm font-light tracking-widest focus-visible:ring-0 focus:border-foreground focus:outline-none transition-all placeholder:text-muted-foreground/30 shadow-none px-0"
+              placeholder={m.register_verification_code_placeholder()}
+            />
+            <button
+              type="button"
+              onClick={sendCode}
+              disabled={!canSendCode}
+              className="shrink-0 text-[10px] font-mono uppercase tracking-widest border border-border/40 px-4 py-2 hover:border-foreground transition-all disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isSendingCode ? (
+                <Loader2 className="animate-spin" size={12} />
+              ) : codeCountdown > 0 ? (
+                <span>{codeCountdown}s</span>
+              ) : (
+                <span>{m.register_send_code()}</span>
+              )}
+            </button>
+          </div>
+          {errors.verificationCode && (
+            <span className="text-[9px] font-mono text-destructive uppercase tracking-widest mt-1 block">
+              {errors.verificationCode.message}
             </span>
           )}
         </div>

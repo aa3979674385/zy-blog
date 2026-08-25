@@ -4,11 +4,77 @@ import { EmailLayout } from "./EmailLayout";
 
 interface AuthEmailProps {
   locale: Locale;
-  type: "verification" | "reset-password";
+  type: "verification" | "reset-password" | "verification-code";
   url: string;
+  code?: string;
 }
 
-export const AuthEmail = ({ locale, type, url }: AuthEmailProps) => {
+export const AuthEmail = ({ locale, type, url, code }: AuthEmailProps) => {
+  // Verification code email: show 6-digit code prominently
+  if (type === "verification-code" && code) {
+    const title = m.email_auth_verification_code_subject({}, { locale });
+    const description = m.email_auth_verification_code_desc({}, { locale });
+
+    return (
+      <EmailLayout locale={locale} previewText={title}>
+        <h1
+          style={{
+            fontFamily: '"Playfair Display", "Georgia", serif',
+            fontSize: "20px",
+            fontWeight: "500",
+            color: "#1a1a1a",
+            marginBottom: "24px",
+            lineHeight: "1.4",
+          }}
+        >
+          {title}
+        </h1>
+        <p
+          style={{
+            fontSize: "14px",
+            color: "#444",
+            lineHeight: "1.6",
+            marginBottom: "32px",
+          }}
+        >
+          {description}
+        </p>
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "32px",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              fontFamily: '"Courier New", monospace',
+              fontSize: "36px",
+              fontWeight: "700",
+              letterSpacing: "0.3em",
+              color: "#1a1a1a",
+              backgroundColor: "#f5f5f5",
+              padding: "16px 32px",
+              borderRadius: "8px",
+            }}
+          >
+            {code}
+          </span>
+        </div>
+        <p
+          style={{
+            fontSize: "12px",
+            color: "#999",
+            marginTop: "24px",
+            fontStyle: "italic",
+          }}
+        >
+          {m.email_auth_expiry_notice({}, { locale })}
+        </p>
+      </EmailLayout>
+    );
+  }
+
   const isVerification = type === "verification";
   const title = isVerification
     ? m.email_auth_verification_subject({}, { locale })

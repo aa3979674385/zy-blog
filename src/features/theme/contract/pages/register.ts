@@ -4,6 +4,7 @@ import type { TurnstileProps } from "@/components/common/turnstile";
 export interface RegisterSchema {
   name: string;
   email: string;
+  verificationCode: string;
   password: string;
   confirmPassword: string;
 }
@@ -16,6 +17,12 @@ export interface RegisterFormData {
   isSuccess: boolean;
   turnstileProps: TurnstileProps;
   turnstilePending: boolean;
+  /** Send verification code to the email address */
+  sendCode: () => Promise<void>;
+  /** Whether a verification code is currently being sent */
+  isSendingCode: boolean;
+  /** Countdown seconds remaining before code can be resent (0 = can send) */
+  codeCountdown: number;
 }
 
 export interface RegisterPageProps {

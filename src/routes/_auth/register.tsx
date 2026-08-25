@@ -47,6 +47,13 @@ function RouteComponent() {
     if (ok) await rawSubmit(e);
   };
 
+  // 发送验证码前也先确保人机验证通过
+  const rawSendCode = registerForm.sendCode;
+  registerForm.sendCode = async () => {
+    const ok = await ensureVerified();
+    if (ok) await rawSendCode();
+  };
+
   const turnstileElement = (
     <div className="flex justify-center">
       <Turnstile {...turnstileProps} />

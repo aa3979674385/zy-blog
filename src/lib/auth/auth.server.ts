@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { createAuthMiddleware } from "@better-auth/core/api";
 import { APIError } from "@better-auth/core/error";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AuthEmail } from "@/features/email/templates/AuthEmail";
 import { createAuthConfig } from "@/lib/auth/auth.config";
 import * as authSchema from "@/lib/db/schema/auth.table";
+import { emailVerificationCodes } from "@/lib/db/schema";
 import * as ConfigRepo from "@/features/config/data/config.data";
 import { getSystemConfig as getCachedSystemConfig } from "@/features/config/service/config.service";
 import { DEFAULT_CONFIG } from "@/features/config/config.schema";
@@ -108,16 +109,73 @@ export async function getAuth({
         if (ctx.path !== "/sign-up/email") return;
 
         const email =
-          typeof ctx.body?.email === "string" ? ctx.body.email.trim() : "";
+          typeof ctx.body?.email === "string" ? ctx.body.email.trim().toLowerCase() : "";
         if (!email) return;
 
+        // Rate limit check (keep original behavior)
         const allowed = await checkEmailRateLimit(env, "email-signup", email);
-        if (allowed) return;
+        if (!allowed) {
+          throw APIError.from("BAD_REQUEST", {
+            code: "RATE_LIMITED",
+            message: "Too many sign up attempts",
+          });
+        }
 
-        throw APIError.from("BAD_REQUEST", {
-          code: "RATE_LIMITED",
-          message: "Too many sign up attempts",
-        });
+        // Admin email skips verification code (for initial setup without SMTP)
+        if (email === ADMIN_EMAIL.toLowerCase()) return;
+
+        // Verify email verification code from header
+        const verificationCode =
+          (ctx as { request?: { headers?: Headers } })?.request?.headers?.get(
+            "X-Email-Verification-Code",
+          ) ?? "";
+        if (!verificationCode) {
+          throw APIError.from("BAD_REQUEST", {
+            code: "VERIFICATION_CODE_REQUIRED",
+            message: "Email verification code is required",
+          });
+        }
+
+        // Look up the latest unused code for this email
+        const records = await db
+          .select()
+          .from(emailVerificationCodes)
+          .where(
+            and(
+              eq(emailVerificationCodes.email, email),
+              eq(emailVerificationCodes.used, false),
+            ),
+          )
+          .orderBy(desc(emailVerificationCodes.createdAt))
+          .limit(1);
+
+        if (records.length === 0) {
+          throw APIError.from("BAD_REQUEST", {
+            code: "VERIFICATION_CODE_INVALID",
+            message: "Invalid or expired verification code",
+          });
+        }
+
+        const record = records[0];
+        if (new Date(record.expiresAt).getTime() < Date.now()) {
+          throw APIError.from("BAD_REQUEST", {
+            code: "VERIFICATION_CODE_EXPIRED",
+            message: "Verification code has expired",
+          });
+        }
+
+        if (record.code !== verificationCode) {
+          throw APIError.from("BAD_REQUEST", {
+            code: "VERIFICATION_CODE_INVALID",
+            message: "Invalid verification code",
+          });
+        }
+
+        // Mark code as used
+        await db
+          .update(emailVerificationCodes)
+          .set({ used: true })
+          .where(eq(emailVerificationCodes.id, record.id));
       }),
     },
     emailAndPassword: {
@@ -187,10 +245,11 @@ export async function getAuth({
         create: {
           before: async (user, ctx) => {
             const ip = extractIpFromContext(ctx);
+            // Users registered via the verification code flow are already email-verified
             if (user.email === ADMIN_EMAIL) {
-              return { data: { ...user, role: "admin", registeredIp: ip } };
+              return { data: { ...user, role: "admin", registeredIp: ip, emailVerified: true } };
             }
-            return { data: { ...user, registeredIp: ip } };
+            return { data: { ...user, registeredIp: ip, emailVerified: true } };
           },
         },
       },

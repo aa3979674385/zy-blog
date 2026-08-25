@@ -1,6 +1,7 @@
 export * from "./admin-log.table";
 export * from "./auth.table";
 export * from "./card-keys.table";
+export * from "./email-verification-codes.table";
 export * from "./categories.table";
 export * from "./comments.table";
 export * from "./config.table";

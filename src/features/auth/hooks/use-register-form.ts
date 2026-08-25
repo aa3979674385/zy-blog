@@ -1,7 +1,7 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -21,6 +21,10 @@ const createRegisterSchema = (messages: Messages) =>
         .min(2, messages.register_validation_name_min())
         .max(20, messages.register_validation_name_max()),
       email: z.email(messages.register_validation_email_invalid()),
+      verificationCode: z
+        .string()
+        .min(6, messages.register_validation_code_min())
+        .max(6, messages.register_validation_code_max()),
       password: z.string().min(8, messages.register_validation_password_min()),
       confirmPassword: z.string(),
     })
@@ -45,6 +49,9 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
   } = options;
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [codeCountdown, setCodeCountdown] = useState(0);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
   const previousLocation = usePreviousLocation();
   const queryClient = useQueryClient();
@@ -54,6 +61,83 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
     resolver: standardSchemaResolver(registerSchema),
   });
 
+  // Cleanup countdown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
+    };
+  }, []);
+
+  const startCountdown = useCallback(() => {
+    setCodeCountdown(60);
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+    }
+    countdownTimerRef.current = setInterval(() => {
+      setCodeCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const sendCode = useCallback(async () => {
+    const email = form.getValues("email");
+    if (!email) {
+      toast.error(m.register_toast_email_required());
+      return;
+    }
+
+    // Validate email format before sending
+    const emailResult = registerSchema.shape.email.safeParse(email);
+    if (!emailResult.success) {
+      toast.error(m.register_validation_email_invalid());
+      return;
+    }
+
+    setIsSendingCode(true);
+    try {
+      const response = await fetch("/api/auth/send-verification-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Turnstile-Token": getCaptchaToken() ?? "",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (data.code === "EMAIL_ALREADY_REGISTERED") {
+          toast.error(m.register_toast_email_registered());
+        } else if (data.code === "RATE_LIMITED") {
+          toast.error(m.register_toast_rate_limited());
+        } else {
+          toast.error(m.register_toast_code_send_failed(), {
+            description: data.message ?? m.register_error_default(),
+          });
+        }
+        return;
+      }
+
+      toast.success(m.register_toast_code_sent());
+      startCountdown();
+    } catch {
+      toast.error(m.register_toast_code_send_failed());
+    } finally {
+      setIsSendingCode(false);
+    }
+  }, [form, registerSchema, startCountdown]);
+
   const onSubmit = async (data: RegisterSchema) => {
     const { error } = await authClient.signUp.email({
       email: data.email,
@@ -61,8 +145,10 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
       name: data.name,
       callbackURL: `${window.location.origin}/verify-email`,
       fetchOptions: {
-        // 弹窗模式下 token 由 onVerify 写入全局，闭包里的旧值已不可靠，改读 getCaptchaToken()
-        headers: { "X-Turnstile-Token": getCaptchaToken() ?? "" },
+        headers: {
+          "X-Turnstile-Token": getCaptchaToken() ?? "",
+          "X-Email-Verification-Code": data.verificationCode,
+        },
       },
     });
 
@@ -78,17 +164,12 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
 
     queryClient.removeQueries({ queryKey: AUTH_KEYS.session });
 
-    if (isEmailConfigured) {
-      setIsSuccess(true);
-      toast.success(m.register_toast_created(), {
-        description: m.register_toast_verification_sent(),
-      });
-    } else {
-      toast.success(m.register_toast_success(), {
-        description: m.register_toast_activated(),
-      });
-      navigate({ to: previousLocation });
-    }
+    // With verification code flow, email is already verified at registration.
+    // User can log in directly — no need to wait for verification email.
+    toast.success(m.register_toast_success(), {
+      description: m.register_toast_activated(),
+    });
+    navigate({ to: previousLocation });
   };
 
   return {
@@ -98,6 +179,9 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
     isSubmitting: form.formState.isSubmitting,
     isSuccess,
     turnstilePending,
+    sendCode,
+    isSendingCode,
+    codeCountdown,
   };
 }
 

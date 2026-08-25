@@ -2,6 +2,8 @@ import handler from "@/lib/worker/ssr-stream-handler";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { proxy } from "hono/proxy";
+import { eq } from "drizzle-orm";
+import { renderToStaticMarkup } from "react-dom/server";
 import { handleImageRequest } from "@/features/media/service/media.service";
 import postsDetailRoute from "@/features/posts/api/hono/posts.detail.route";
 import postsDetailByIdRoute from "@/features/posts/api/hono/posts.detail-by-id.route";
@@ -13,8 +15,12 @@ import searchRoute from "@/features/search/api/hono/search.route";
 import siteDocumentsRoute from "@/features/site-documents/api/hono/site-documents.route";
 import tagsRoute from "@/features/tags/api/hono/tags.list.route";
 import categoriesRoute from "@/features/categories/api/hono/categories.list.route";
+import { AuthEmail } from "@/features/email/templates/AuthEmail";
+import { user, emailVerificationCodes } from "@/lib/db/schema";
 import { serverEnv } from "@/lib/env/server.env";
-import { resourceDownloadRedirectRoute } from "@/features/post-resources/api/hono/redirect.route";
+import type { Locale } from "@/lib/i18n";
+import { m } from "@/paraglide/messages";
+import resourceDownloadRedirectRoute from "@/features/post-resources/api/hono/redirect.route";
 import captchaConfigRoute from "./captcha-config.route";
 import { securityHeadersMiddleware } from "./security-headers";
 import { createRateLimiterIdentifier, getExecutionContext } from "./helper";
@@ -121,6 +127,78 @@ app.get("/images/:key{.+}", async (c) => {
 app.all("/api/auth/admin/*", async (c) => {
   return c.json({ error: "Not Found" }, 404);
 });
+
+/* ====== Send email verification code for registration ====== */
+app.post(
+  "/api/auth/send-verification-code",
+  baseMiddleware,
+  turnstileMiddleware,
+  rateLimitMiddleware({
+    capacity: 3,
+    interval: "1m",
+    identifier: createRateLimiterIdentifier,
+  }),
+  rateLimitMiddleware({
+    capacity: 5,
+    interval: "1h",
+    identifier: (c) => `hourly:${createRateLimiterIdentifier(c)}`,
+  }),
+  async (c) => {
+    const db = c.get("db");
+    const body = await c.req.json().catch(() => ({}));
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return c.json(
+        { code: "INVALID_EMAIL", message: "Invalid email address" },
+        400,
+      );
+    }
+
+    // Check if email is already registered
+    const existingUser = await db.query.user.findFirst({
+      where: eq(user.email, email),
+    });
+    if (existingUser) {
+      return c.json(
+        { code: "EMAIL_ALREADY_REGISTERED", message: "Email already registered" },
+        400,
+      );
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    const codeId = crypto.randomUUID();
+
+    // Store in D1
+    await db.insert(emailVerificationCodes).values({
+      id: codeId,
+      email,
+      code,
+      expiresAt,
+      used: false,
+    });
+
+    // Send verification code email via QUEUE
+    const { LOCALE } = serverEnv(c.env);
+    const locale = LOCALE as Locale;
+    const emailHtml = renderToStaticMarkup(
+      AuthEmail({ locale, type: "verification-code", url: "", code }),
+    );
+
+    await c.env.QUEUE.send({
+      type: "EMAIL",
+      data: {
+        to: email,
+        subject: m.email_auth_verification_code_subject({}, { locale }),
+        html: emailHtml,
+      },
+    });
+
+    return c.json({ success: true });
+  },
+);
 
 app.get("/api/auth/*", baseMiddleware, forwardAuthRequest);
 

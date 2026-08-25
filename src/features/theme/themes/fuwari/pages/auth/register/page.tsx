@@ -7,11 +7,20 @@ export function RegisterPage({
   registerForm,
   turnstileElement,
 }: RegisterPageProps) {
-  const { register, errors, handleSubmit, isSubmitting, turnstilePending } =
-    registerForm;
+  const {
+    register,
+    errors,
+    handleSubmit,
+    isSubmitting,
+    turnstilePending,
+    sendCode,
+    isSendingCode,
+    codeCountdown,
+  } = registerForm;
 
   const isInputDisabled = isSubmitting;
   const isSubmitDisabled = isSubmitting || turnstilePending;
+  const canSendCode = !isSendingCode && codeCountdown === 0 && !isInputDisabled;
 
   if (registerForm.isSuccess) {
     return (
@@ -87,6 +96,44 @@ export function RegisterPage({
             {errors.email && (
               <span className="text-xs text-red-500 ml-1 mt-1 font-medium">
                 {errors.email.message}
+              </span>
+            )}
+          </div>
+
+          {/* Verification Code Field */}
+          <div className="flex flex-col gap-1.5 focus-within:text-(--fuwari-primary) transition-colors text-(--fuwari-text-50)">
+            <label htmlFor="reg-code" className="text-sm font-bold ml-1">
+              {m.register_verification_code()}
+            </label>
+            <div className="flex gap-3">
+              <input
+                id="reg-code"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                {...register("verificationCode")}
+                placeholder={m.register_verification_code_placeholder()}
+                disabled={isInputDisabled}
+                className="flex-1 bg-(--fuwari-input-bg) border border-(--fuwari-input-border) rounded-xl px-4 py-3 text-(--fuwari-text-90) placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:border-(--fuwari-primary)/50 focus:bg-(--fuwari-primary)/5 transition-all text-sm outline-none tracking-widest"
+              />
+              <button
+                type="button"
+                onClick={sendCode}
+                disabled={!canSendCode}
+                className="shrink-0 px-4 py-3 rounded-xl fuwari-btn-regular font-bold text-sm transition-all active:scale-[0.98] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSendingCode ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : codeCountdown > 0 ? (
+                  <span>{codeCountdown}s</span>
+                ) : (
+                  <span>{m.register_send_code()}</span>
+                )}
+              </button>
+            </div>
+            {errors.verificationCode && (
+              <span className="text-xs text-red-500 ml-1 mt-1 font-medium">
+                {errors.verificationCode.message}
               </span>
             )}
           </div>
