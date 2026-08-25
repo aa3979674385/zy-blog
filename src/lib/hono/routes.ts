@@ -5,8 +5,8 @@ import { proxy } from "hono/proxy";
 import { eq } from "drizzle-orm";
 import { renderToStaticMarkup } from "react-dom/server";
 import { handleImageRequest } from "@/features/media/service/media.service";
-import { isEmailConfigured } from "@/features/email/service/email.service";
-import * as ConfigRepo from "@/features/config/data/config.data";import postsDetailRoute from "@/features/posts/api/hono/posts.detail.route";
+import { sendEmail } from "@/features/email/service/email.service";
+import postsDetailRoute from "@/features/posts/api/hono/posts.detail.route";
 import postsDetailByIdRoute from "@/features/posts/api/hono/posts.detail-by-id.route";
 import postsListRoute from "@/features/posts/api/hono/posts.list.route";
 import postsPagedRoute from "@/features/posts/api/hono/posts.paged.route";
@@ -181,30 +181,33 @@ app.post(
       used: false,
     });
 
-    // Check SMTP configuration before enqueueing email
-    const systemConfig = await ConfigRepo.getSystemConfig(db);
-    if (!isEmailConfigured(systemConfig?.email)) {
-      return c.json(
-        { code: "EMAIL_NOT_CONFIGURED", message: "Email service not configured" },
-        503,
-      );
-    }
-
-    // Send verification code email via QUEUE
+    // Send verification code email directly (sync - fail immediately on error)
     const { LOCALE } = serverEnv(c.env);
     const locale = LOCALE as Locale;
     const emailHtml = renderToStaticMarkup(
       AuthEmail({ locale, type: "verification-code", url: "", code }),
     );
 
-    await c.env.QUEUE.send({
-      type: "EMAIL",
-      data: {
-        to: email,
-        subject: m.email_auth_verification_code_subject({}, { locale }),
-        html: emailHtml,
-      },
+    const serviceCtx = getServiceContext(c);
+    const sendResult = await sendEmail(serviceCtx, {
+      to: email,
+      subject: m.email_auth_verification_code_subject({}, { locale }),
+      html: emailHtml,
     });
+
+    if (sendResult.error) {
+      const reason = sendResult.error.reason;
+      if (reason === "EMAIL_DISABLED") {
+        return c.json(
+          { code: "EMAIL_NOT_CONFIGURED", message: "Email service not configured" },
+          503,
+        );
+      }
+      return c.json(
+        { code: "EMAIL_SEND_FAILED", message: sendResult.error.message || "Failed to send email" },
+        503,
+      );
+    }
 
     return c.json({ success: true });
   },

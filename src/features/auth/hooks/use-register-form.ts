@@ -120,7 +120,7 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
           toast.error(m.register_toast_email_registered());
         } else if (data.code === "RATE_LIMITED") {
           toast.error(m.register_toast_rate_limited());
-        } else if (data.code === "EMAIL_NOT_CONFIGURED") {
+        } else if (data.code === "EMAIL_NOT_CONFIGURED" || data.code === "EMAIL_SEND_FAILED") {
           toast.error(m.register_toast_email_not_configured());
         } else {
           toast.error(m.register_toast_code_send_failed(), {
