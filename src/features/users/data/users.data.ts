@@ -126,9 +126,6 @@ export async function getUserById(db: DB, id: string) {
 
 export interface UpdateUserInput {
   name?: string;
-  role?: string;
-  /** 权限键数组；null = 超级管理员；不传则保持原值 */
-  permissions?: string[] | null;
   banned?: boolean;
   banReason?: string | null;
   /** 封禁到期时间戳（ms）；null 表示永久封禁；不传则保持原值 */
@@ -142,12 +139,6 @@ export async function updateUser(
 ): Promise<void> {
   const setData: Partial<typeof user.$inferInsert> = {};
   if (data.name !== undefined) setData.name = data.name;
-  if (data.role !== undefined) setData.role = data.role;
-  // permissions 为 text 列：数组需序列化为 JSON 字符串；null 表示超级管理员
-  if (data.permissions !== undefined) {
-    setData.permissions =
-      data.permissions === null ? null : JSON.stringify(data.permissions);
-  }
   if (data.banned !== undefined) setData.banned = data.banned;
   if (data.banReason !== undefined) setData.banReason = data.banReason;
   if (data.banExpires !== undefined) setData.banExpires = data.banExpires;

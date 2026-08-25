@@ -1,5 +1,4 @@
 import type { BetterAuthOptions } from "better-auth";
-import { admin } from "better-auth/plugins";
 
 export function createAuthConfig() {
   return {
@@ -13,6 +12,6 @@ export function createAuthConfig() {
         maxAge: 5 * 60,
       },
     },
-    plugins: [admin()],
+    plugins: [],
   } satisfies BetterAuthOptions;
 }

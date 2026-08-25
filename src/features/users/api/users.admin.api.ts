@@ -47,13 +47,10 @@ export const updateUserFn = createServerFn()
   .inputValidator(updateUserInputSchema)
   .handler(async ({ data, context }) => {
     const prev = await UserService.getUser(context, data.id);
-    await UserService.updateUser(context, data.id, {
+    // 直接操作数据库，因为通用 updateUser 已禁止修改 role/permissions
+    const setData: Partial<typeof user.$inferInsert> = {
       name: data.name,
       role: data.role,
-      // 仅在显式传了 permissions 时更新（封禁/解封等调用可不传，避免清空）
-      ...(data.permissions !== undefined
-        ? { permissions: data.permissions }
-        : {}),
       banned: data.banned,
       banReason: data.banned ? (data.banReason ?? null) : null,
       banExpires: data.banned
@@ -61,7 +58,13 @@ export const updateUserFn = createServerFn()
           ? new Date(data.banExpires)
           : null
         : null,
-    });
+    };
+    // permissions 为 text 列：数组需序列化为 JSON 字符串；null 表示超级管理员
+    if (data.permissions !== undefined) {
+      setData.permissions =
+        data.permissions === null ? null : JSON.stringify(data.permissions);
+    }
+    await context.db.update(user).set(setData).where(eq(user.id, data.id));
 
     // 记录操作日志
     const admin = context.session.user;

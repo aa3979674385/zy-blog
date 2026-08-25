@@ -118,6 +118,10 @@ app.get("/images/:key{.+}", async (c) => {
   }
 });
 
+app.all("/api/auth/admin/*", async (c) => {
+  return c.json({ error: "Not Found" }, 404);
+});
+
 app.get("/api/auth/*", baseMiddleware, forwardAuthRequest);
 
 const protectedAuthPaths = [
