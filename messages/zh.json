@@ -361,6 +361,7 @@
   "register_toast_rate_limited": "操作过于频繁，请稍后再试",
   "register_toast_code_sent": "验证码已发送",
   "register_toast_code_send_failed": "验证码发送失败",
+  "register_toast_email_not_configured": "邮件服务未配置，请联系管理员",
   "forgot_password_title": "找回密码",
   "forgot_password_label": "FORGOT_PASSWORD",
   "forgot_password_header_desc": "请输入您的注册邮箱，我们将向您发送重置密码的链接。",

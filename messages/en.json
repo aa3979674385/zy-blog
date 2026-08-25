@@ -368,6 +368,7 @@
   "register_toast_rate_limited": "Too many requests, please try later",
   "register_toast_code_sent": "Verification code sent",
   "register_toast_code_send_failed": "Failed to send verification code",
+  "register_toast_email_not_configured": "Email service is not configured, please contact the administrator",
   "forgot_password_title": "Forgot Password",
   "forgot_password_label": "FORGOT_PASSWORD",
   "forgot_password_header_desc": "Please enter your registered email address, and we will send you a password reset link.",
