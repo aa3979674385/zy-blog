@@ -347,7 +347,7 @@
   "register_confirm_password": "Confirm Password",
   "register_submit": "Create Account",
   "register_submitting": "Submitting...",
-  "register_validation_name_min": "Nickname must be at least 2 characters",
+  "register_validation_name_min": "Nickname must be at least 8 characters",
   "register_validation_name_max": "Nickname must be at most 20 characters",
   "register_validation_email_invalid": "Invalid email format",
   "register_validation_password_min": "Password must be at least 8 characters",

@@ -18,7 +18,7 @@ const createRegisterSchema = (messages: Messages) =>
     .object({
       name: z
         .string()
-        .min(2, messages.register_validation_name_min())
+        .min(8, messages.register_validation_name_min())
         .max(20, messages.register_validation_name_max()),
       email: z.email(messages.register_validation_email_invalid()),
       verificationCode: z

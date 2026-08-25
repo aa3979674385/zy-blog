@@ -340,7 +340,7 @@
   "register_confirm_password": "确认密码",
   "register_submit": "创建账户",
   "register_submitting": "提交中...",
-  "register_validation_name_min": "昵称至少 2 位",
+  "register_validation_name_min": "昵称至少 8 位",
   "register_validation_name_max": "昵称最多 20 位",
   "register_validation_email_invalid": "无效的邮箱格式",
   "register_validation_password_min": "密码至少 8 位",

@@ -112,6 +112,16 @@ export async function getAuth({
           typeof ctx.body?.email === "string" ? ctx.body.email.trim().toLowerCase() : "";
         if (!email) return;
 
+        // Validate name length (minimum 8 characters)
+        const name =
+          typeof ctx.body?.name === "string" ? ctx.body.name.trim() : "";
+        if (name.length < 8 || name.length > 20) {
+          throw APIError.from("BAD_REQUEST", {
+            code: "NAME_TOO_SHORT",
+            message: "Nickname must be at least 8 and at most 20 characters",
+          });
+        }
+
         // Rate limit check (keep original behavior)
         const allowed = await checkEmailRateLimit(env, "email-signup", email);
         if (!allowed) {
