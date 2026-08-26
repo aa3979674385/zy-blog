@@ -120,6 +120,11 @@
       "new_sqlite_classes": ["PasswordHasher"]
     }
   ],
+  "triggers": {
+    "crons": [
+      "0 3 * * *"
+    ]
+  },
   "env": {
     "test": {
       "durable_objects": {
