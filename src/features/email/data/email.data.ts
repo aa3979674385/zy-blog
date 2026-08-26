@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import type { EmailUnsubscribeType } from "@/lib/db/schema";
-import { EmailUnsubscriptionsTable } from "@/lib/db/schema";
+import { EmailUnsubscriptionsTable, emailVerificationCodes } from "@/lib/db/schema";
 
 export async function isUnsubscribed(
   db: DB,
@@ -43,4 +43,15 @@ export async function unsubscribe(
       type,
     })
     .onConflictDoNothing(); // Already unsubscribed
+}
+
+/**
+ * 删除已过期的邮箱验证码。
+ * 只删除 `expiresAt <= now()` 的记录，保留未过期的。
+ */
+export async function deleteExpiredVerificationCodes(db: DB): Promise<number> {
+  const result = await db
+    .delete(emailVerificationCodes)
+    .where(lte(emailVerificationCodes.expiresAt, new Date()));
+  return result.rowsAffected ?? 0;
 }
