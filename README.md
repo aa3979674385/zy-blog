@@ -272,7 +272,8 @@ git clone https://github.com/aa3979674385/zy-blog.git
 | `BUCKET_NAME`                | CI/CD  | R2 存储桶名称                                     |
 | `BETTER_AUTH_SECRET`         | 运行时 | 会话加密密钥，运行 `openssl rand -hex 32` 生成    |
 | `BETTER_AUTH_URL`            | 运行时 | 应用 URL（如 `https://blog.example.com`）         |
-| `ADMIN_EMAIL`                | 运行时 | 管理员邮箱                                        |
+| `ADMIN_EMAIL`                | 运行时 | 管理员邮箱，用 `wrangler secret put ADMIN_EMAIL` 注入。未配置时默认 `admin@example.com` |
+| `ADMIN_PASSWORD`             | 运行时 | 管理员初始密码，用 `wrangler secret put ADMIN_PASSWORD` 注入，切勿写进 `wrangler.jsonc`。未配置时默认 `admin123456` |
 | `GITHUB_CLIENT_ID`           | 运行时 | GitHub OAuth Client ID                            |
 | `GITHUB_CLIENT_SECRET`       | 运行时 | GitHub OAuth Client Secret                        |
 | `CLOUDFLARE_ZONE_ID`         | 运行时 | Cloudflare Zone ID                                |
@@ -342,11 +343,44 @@ bun dev
 
 ### 登录管理后台
 
-**方式一：邮箱密码注册（无需第三方服务）**
+**方式一：环境变量自动初始化（推荐，部署即生效）**
 
-1. 访问 `http://localhost:3000` 注册页面，使用 `.dev.vars` 中配置的 `ADMIN_EMAIL` 注册账号
-2. 开发环境下验证邮件不会真正发送，验证链接会打印到控制台，复制访问即可完成验证
-3. 验证后自动登录，系统根据 `ADMIN_EMAIL` 自动赋予管理员权限
+配置 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 环境变量后，系统会在**部署后首次请求**时自动创建管理员账号（异步执行，不阻塞请求），无需手动注册或执行 SQL：
+
+```bash
+# 本地开发：写入 .dev.vars
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-secure-password
+
+# 线上部署：用 wrangler secret 注入（切勿写进 wrangler.jsonc 明文）
+wrangler secret put ADMIN_EMAIL
+wrangler secret put ADMIN_PASSWORD
+```
+
+- 首次部署后访问站点任意页面，系统在后台自动创建 `role: admin` 的用户 + 对应的密码凭证
+- 后续请求通过 KV 缓存跳过初始化检查，**零额外开销**
+- **创建后不会被覆盖**：`ADMIN_PASSWORD` 仅用于首次创建。之后你在管理后台修改的密码、权限、资料等全部保留，重新部署程序更新时不会覆盖回去
+
+**忘记配置也能进：默认凭据兜底**
+
+即使未设置 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD`，系统也会使用默认凭据自动创建管理员账号：
+
+| 默认邮箱              | 默认密码       |
+| :-------------------- | :------------- |
+| `admin@example.com`   | `admin123456`  |
+
+> **警告**：默认凭据仅用于兜底，任何人只要知道默认值就能登录。请务必在首次登录后到管理后台修改密码，并尽快通过 `wrangler secret put` 配置正式的环境变量。
+
+- 控制台会输出醒目告警日志，提醒使用的是默认凭据
+
+**忘记管理员密码怎么办**
+
+由于密码创建后不会被环境变量覆盖，忘记密码时需手动重置：
+
+1. 在 Cloudflare Dashboard → KV 中删除键 `admin:initialized`
+2. 在 D1 数据库中删除该管理员用户行（`DELETE FROM user WHERE email = '你的管理员邮箱'` 和 `DELETE FROM account WHERE userId = 对应ID`）
+3. 设置新的 `ADMIN_PASSWORD` 环境变量后重新部署
+4. 系统检测到管理员不存在，自动用新密码重新创建
 
 **方式二：GitHub OAuth**
 

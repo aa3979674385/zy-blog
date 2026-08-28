@@ -8,6 +8,12 @@
     "enabled": true
   },
   "keep_vars": true,
+  // 管理员账号（均可省略，省略时使用默认凭据兜底）：
+  // 部署后首次请求自动创建管理员账号，无需手动注册或 SQL。
+  // - ADMIN_EMAIL：管理员邮箱，请用 `wrangler secret put ADMIN_EMAIL` 注入。未配置时默认 admin@example.com
+  // - ADMIN_PASSWORD：管理员密码，请用 `wrangler secret put ADMIN_PASSWORD` 注入。未配置时默认 admin123456
+  //   修改密码后重新部署即自动更新（首次请求触发，KV 缓存加速后续请求）
+  //   使用默认凭据时控制台会输出告警，请登录后台修改密码后尽快配置正式 secret
   // 人机验证（CAPTCHA）配置：
   // Turnstile:
   // - VITE_TURNSTILE_SITE_KEY 为客户端站点密钥（打包进前端，用于显示验证框）

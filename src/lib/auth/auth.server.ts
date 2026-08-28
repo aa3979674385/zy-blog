@@ -62,7 +62,6 @@ export async function getAuth({
   const {
     BETTER_AUTH_SECRET,
     BETTER_AUTH_URL,
-    ADMIN_EMAIL,
     LOCALE,
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
@@ -130,9 +129,6 @@ export async function getAuth({
             message: "Too many sign up attempts",
           });
         }
-
-        // Admin email skips verification code (for initial setup without SMTP)
-        if (email === ADMIN_EMAIL.toLowerCase()) return;
 
         // If email verification is disabled in settings, skip verification code check
         if (!requireEmailVerification) return;
@@ -258,10 +254,6 @@ export async function getAuth({
         create: {
           before: async (user, ctx) => {
             const ip = extractIpFromContext(ctx);
-            // Users registered via the verification code flow are already email-verified
-            if (user.email === ADMIN_EMAIL) {
-              return { data: { ...user, role: "admin", registeredIp: ip, emailVerified: true } };
-            }
             return { data: { ...user, registeredIp: ip, emailVerified: true } };
           },
         },

@@ -10,7 +10,17 @@ const domainSchema = z
 const serverEnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string(),
   BETTER_AUTH_URL: z.url(),
-  ADMIN_EMAIL: z.email(),
+  /**
+   * 管理员邮箱（运行时 secret 或 var）。
+   * 未配置时使用默认值 admin@example.com，可登录后修改。
+   */
+  ADMIN_EMAIL: z.email().catch("admin@example.com"),
+  /**
+   * 管理员初始密码（运行时 secret，改完无需重新构建）。
+   * 未配置时使用默认值 admin123456，可登录后在后台修改。
+   * 用 `wrangler secret put ADMIN_PASSWORD` 注入，切勿写进 wrangler.jsonc。
+   */
+  ADMIN_PASSWORD: z.string().catch("admin123456"),
   LOCALE: localeSchema.catch("zh"),
   GITHUB_CLIENT_ID: z.string(),
   GITHUB_CLIENT_SECRET: z.string(),

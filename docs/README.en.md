@@ -195,7 +195,8 @@ Please refer to the **[Flare Stack Blog Deployment Guide](./deployment-guide.en.
 | `BUCKET_NAME`                | CI/CD   | R2 Bucket Name                                                       |
 | `BETTER_AUTH_SECRET`         | Runtime | Session encryption key. Generate using `openssl rand -hex 32`        |
 | `BETTER_AUTH_URL`            | Runtime | Application URL (e.g., `https://blog.example.com`)                   |
-| `ADMIN_EMAIL`                | Runtime | Administrator's email address                                        |
+| `ADMIN_EMAIL`                | Runtime | Admin email via `wrangler secret put ADMIN_EMAIL`. Defaults to `admin@example.com` if not set        |
+| `ADMIN_PASSWORD`             | Runtime | Admin initial password via `wrangler secret put ADMIN_PASSWORD` — never in `wrangler.jsonc` plaintext. Defaults to `admin123456` if not set |
 | `GITHUB_CLIENT_ID`           | Runtime | GitHub OAuth Client ID                                               |
 | `GITHUB_CLIENT_SECRET`       | Runtime | GitHub OAuth Client Secret                                           |
 | `CLOUDFLARE_ZONE_ID`         | Runtime | Cloudflare Zone ID                                                   |
@@ -245,11 +246,44 @@ bun dev
 
 ### Logging into the Admin Backend
 
-**Method 1: Email and Password Registration (No third-party service required)**
+**Method 1: Auto-Initialization via Environment Variables (Recommended)**
 
-1. Visit `http://localhost:3000`'s registration page and register using the `ADMIN_EMAIL` configured in `.dev.vars`.
-2. In the development environment, the verification email won't actually be sent. A link will be printed directly in the terminal console — copy and visit it to complete verification.
-3. Post-verification involves automatic login, with the system granting admin privileges matched by `ADMIN_EMAIL`.
+After configuring `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.dev.vars` (local) or Cloudflare Secrets (production), the system automatically creates the admin account on the **first request after deployment** (executed asynchronously, non-blocking):
+
+```bash
+# Local development: write to .dev.vars
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-secure-password
+
+# Production: inject via wrangler secret (never put plaintext in wrangler.jsonc)
+wrangler secret put ADMIN_EMAIL
+wrangler secret put ADMIN_PASSWORD
+```
+
+- On first visit to any page after deploy, the system creates a `role: admin` user with the corresponding password credential in the background
+- Subsequent requests skip the init check via KV cache — **zero overhead**
+- **No overwrite after creation**: `ADMIN_PASSWORD` is only used for initial creation. Passwords, permissions, and profile changes made in the admin panel are preserved across redeploys
+
+**Forgot to configure? Default credentials fallback**
+
+Even if `ADMIN_EMAIL` and `ADMIN_PASSWORD` are not set, the system will auto-create an admin account using default credentials:
+
+| Default Email           | Default Password |
+| :---------------------- | :---------------- |
+| `admin@example.com`     | `admin123456`     |
+
+> **Warning**: Default credentials are a fallback only — anyone who knows them can log in. Change the password in the admin panel immediately after first login, and set proper environment variables via `wrangler secret put` as soon as possible.
+
+- The console outputs a prominent warning log when default credentials are in use
+
+**Forgot admin password?**
+
+Since the password is never overwritten by the env var after creation, resetting it requires manual steps:
+
+1. In Cloudflare Dashboard → KV, delete the key `admin:initialized`
+2. In the D1 database, delete the admin user row (`DELETE FROM user WHERE email = 'your-admin-email'` and `DELETE FROM account WHERE userId = corresponding-id`)
+3. Set a new `ADMIN_PASSWORD` environment variable and redeploy
+4. The system detects no admin exists and recreates one with the new password
 
 **Method 2: GitHub OAuth**
 

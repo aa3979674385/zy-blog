@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getAuth } from "@/lib/auth/auth.server";
+import { ensureAdminUser } from "@/lib/auth/admin-init";
 import * as ConfigRepo from "@/features/config/data/config.data";
 import {
   DEFAULT_MAINTENANCE_MESSAGE,
@@ -29,6 +30,12 @@ declare module "hono" {
 export const baseMiddleware = createMiddleware<{ Bindings: Env }>(
   async (c, next) => {
     const db = getDb(c.env);
+    // 惰性初始化管理员账号：首次请求时自动创建，后续靠 KV 快速路径跳过
+    // 使用 waitUntil 不阻塞当前请求（首次部署后第一个请求触发即可）
+    const adminInitPromise = ensureAdminUser(db, c.env).catch((e) => {
+      console.error("Failed to ensure admin user:", e);
+    });
+    c.executionCtx.waitUntil(adminInitPromise);
     // 传入 executionCtx：登录方式配置走 7 天 KV 缓存，避免每次请求直查数据库
     const auth = await getAuth({
       db,
