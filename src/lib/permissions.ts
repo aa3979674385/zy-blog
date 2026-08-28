@@ -72,7 +72,7 @@ export interface PermissionSubject {
 
 /** 将 db/session 中的 permissions 规范化：字符串(JSON) / 数组 / null */
 function normalizePermissions(input: unknown): string[] | null {
-  if (input == null) return null;
+  if (input == null || input === "") return null;
   if (Array.isArray(input)) return input as string[];
   if (typeof input === "string") {
     try {
