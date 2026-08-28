@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_auth/register")({
 });
 
 function RouteComponent() {
-  const { isEmailConfigured } = useRouteContext({ from: "/_auth" });
+  const { isEmailConfigured, requireEmailVerification } = useRouteContext({ from: "/_auth" });
   const {
     reset: resetTurnstile,
     ensureVerified,
@@ -37,6 +37,7 @@ function RouteComponent() {
     turnstilePending: false,
     resetTurnstile,
     isEmailConfigured,
+    requireEmailVerification,
   });
 
   // 提交前先确保人机验证通过（点击提交按钮才弹出验证码），通过后再真正提交
@@ -63,6 +64,7 @@ function RouteComponent() {
   return (
     <theme.RegisterPage
       isEmailConfigured={isEmailConfigured}
+      requireEmailVerification={requireEmailVerification}
       registerForm={{ ...registerForm, turnstileProps }}
       turnstileElement={turnstileElement}
     />

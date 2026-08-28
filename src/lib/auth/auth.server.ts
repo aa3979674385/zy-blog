@@ -134,6 +134,9 @@ export async function getAuth({
         // Admin email skips verification code (for initial setup without SMTP)
         if (email === ADMIN_EMAIL.toLowerCase()) return;
 
+        // If email verification is disabled in settings, skip verification code check
+        if (!requireEmailVerification) return;
+
         // Verify email verification code from header
         const verificationCode =
           (ctx as { request?: { headers?: Headers } })?.request?.headers?.get(

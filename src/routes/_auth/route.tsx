@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_auth")({
     ]);
     const session = sessionResult;
     const authMethod = authSettings.methods; // "email" | "oauth" | "both"
+    const requireEmailVerification = authSettings.requireEmailVerification ?? false;
 
     // 邮箱表单显隐只由「登录方式」开关决定，不再依赖 SMTP 是否已配置
     // （SMTP 未配置时注册会在服务端报错，但表单应当照常出现）。
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_auth")({
       authMethod,
       enableEmail,
       enableGithub,
+      requireEmailVerification,
     };
   },
   component: RouteComponent,

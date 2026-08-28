@@ -27,6 +27,7 @@ export interface RegisterFormData {
 
 export interface RegisterPageProps {
   isEmailConfigured: boolean;
+  requireEmailVerification: boolean;
   registerForm: RegisterFormData;
   turnstileElement: React.ReactNode;
 }

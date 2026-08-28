@@ -6,6 +6,7 @@ import { RegisterForm } from "./form";
 export function RegisterPage({
   registerForm,
   turnstileElement,
+  requireEmailVerification,
 }: RegisterPageProps) {
   if (registerForm.isSuccess) {
     return (
@@ -43,7 +44,7 @@ export function RegisterPage({
       </header>
 
       <div className="space-y-10">
-        <RegisterForm form={registerForm} />
+        <RegisterForm form={registerForm} requireEmailVerification={requireEmailVerification} />
 
         {turnstileElement}
 

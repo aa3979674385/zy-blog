@@ -6,6 +6,7 @@ import { m } from "@/paraglide/messages";
 export function RegisterPage({
   registerForm,
   turnstileElement,
+  requireEmailVerification,
 }: RegisterPageProps) {
   const {
     register,
@@ -100,7 +101,8 @@ export function RegisterPage({
             )}
           </div>
 
-          {/* Verification Code Field */}
+          {/* Verification Code Field (only shown when email verification is enabled) */}
+          {requireEmailVerification && (
           <div className="flex flex-col gap-1.5 focus-within:text-(--fuwari-primary) transition-colors text-(--fuwari-text-50)">
             <label htmlFor="reg-code" className="text-sm font-bold ml-1">
               {m.register_verification_code()}
@@ -137,6 +139,7 @@ export function RegisterPage({
               </span>
             )}
           </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-4">
             {/* Password Field */}

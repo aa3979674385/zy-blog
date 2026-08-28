@@ -5,9 +5,10 @@ import { m } from "@/paraglide/messages";
 
 interface RegisterFormProps {
   form: RegisterFormData;
+  requireEmailVerification: boolean;
 }
 
-export function RegisterForm({ form }: RegisterFormProps) {
+export function RegisterForm({ form, requireEmailVerification }: RegisterFormProps) {
   const {
     register,
     errors,
@@ -58,7 +59,8 @@ export function RegisterForm({ form }: RegisterFormProps) {
           )}
         </div>
 
-        {/* Verification Code Field */}
+        {/* Verification Code Field (only shown when email verification is enabled) */}
+        {requireEmailVerification && (
         <div className="space-y-2 group">
           <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 group-focus-within:text-foreground transition-colors">
             {m.register_verification_code()}
@@ -93,6 +95,7 @@ export function RegisterForm({ form }: RegisterFormProps) {
             </span>
           )}
         </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2 group">

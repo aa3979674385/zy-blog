@@ -13,7 +13,7 @@ import { getRegisterAuthErrorMessage } from "@/lib/auth/auth-errors";
 import type { Messages } from "@/lib/i18n";
 import { m } from "@/paraglide/messages";
 
-const createRegisterSchema = (messages: Messages) =>
+const createRegisterSchema = (messages: Messages, requireVerification: boolean) =>
   z
     .object({
       name: z
@@ -21,10 +21,12 @@ const createRegisterSchema = (messages: Messages) =>
         .min(8, messages.register_validation_name_min())
         .max(20, messages.register_validation_name_max()),
       email: z.email(messages.register_validation_email_invalid()),
-      verificationCode: z
-        .string()
-        .min(6, messages.register_validation_code_min())
-        .max(6, messages.register_validation_code_max()),
+      verificationCode: requireVerification
+        ? z
+            .string()
+            .min(6, messages.register_validation_code_min())
+            .max(6, messages.register_validation_code_max())
+        : z.string().optional(),
       password: z.string().min(8, messages.register_validation_password_min()),
       confirmPassword: z.string(),
     })
@@ -39,12 +41,14 @@ export interface UseRegisterFormOptions {
   turnstilePending: boolean;
   resetTurnstile: () => void;
   isEmailConfigured: boolean;
+  requireEmailVerification: boolean;
 }
 
 export function useRegisterForm(options: UseRegisterFormOptions) {
   const {
     turnstilePending,
     resetTurnstile,
+    requireEmailVerification,
   } = options;
 
   const [isSuccess] = useState(false);
@@ -54,7 +58,7 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
   const navigate = useNavigate();
   const previousLocation = usePreviousLocation();
   const queryClient = useQueryClient();
-  const registerSchema = createRegisterSchema(m);
+  const registerSchema = createRegisterSchema(m, requireEmailVerification);
 
   const form = useForm<RegisterSchema>({
     resolver: standardSchemaResolver(registerSchema),
@@ -148,7 +152,9 @@ export function useRegisterForm(options: UseRegisterFormOptions) {
       fetchOptions: {
         headers: {
           "X-Turnstile-Token": getCaptchaToken() ?? "",
-          "X-Email-Verification-Code": data.verificationCode,
+          ...(requireEmailVerification
+            ? { "X-Email-Verification-Code": data.verificationCode ?? "" }
+            : {}),
         },
       },
     });

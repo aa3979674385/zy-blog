@@ -24,7 +24,7 @@ import { m } from "@/paraglide/messages";
 import resourceDownloadRedirectRoute from "@/features/post-resources/api/hono/redirect.route";
 import captchaConfigRoute from "./captcha-config.route";
 import { securityHeadersMiddleware } from "./security-headers";
-import { createRateLimiterIdentifier, getExecutionContext } from "./helper";
+import { createRateLimiterIdentifier, getExecutionContext, getServiceContext } from "./helper";
 import {
   baseMiddleware,
   cacheMiddleware,

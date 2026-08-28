@@ -25,7 +25,10 @@ export async function getIsEmailConfigured(
 
 export async function getAuthSettings(
   context: DbContext,
-): Promise<{ methods: AuthMethod }> {
+): Promise<{ methods: AuthMethod; requireEmailVerification: boolean }> {
   const config = await ConfigRepo.getSystemConfig(context.db);
-  return { methods: config?.auth?.methods ?? "email" };
+  return {
+    methods: config?.auth?.methods ?? "email",
+    requireEmailVerification: config?.auth?.requireEmailVerification ?? false,
+  };
 }

@@ -38,7 +38,47 @@ const config = defineConfig(({ mode }) => {
         ),
       },
     },
+    ssr: {
+      noExternal: true,
+    },
     plugins: [
+      // Fix: Cloudflare vite-plugin overrides optimizeDeps for the SSR environment,
+      // so root-level optimizeDeps.esbuildOptions don't apply. This plugin injects
+      // esbuild options into the SSR environment via the config hook to mark
+      // TanStack Start's virtual modules as external during dep scanning.
+      {
+        name: "fix-tanstack-virtual-in-ssr",
+        config() {
+          return {
+            environments: {
+              ssr: {
+                optimizeDeps: {
+                  esbuildOptions: {
+                    external: [
+                      "#tanstack-router-entry",
+                      "#tanstack-start-entry",
+                      "#tanstack-start-plugin-adapters",
+                      "tanstack-start-manifest:v",
+                      "tanstack-start-injected-head-scripts:v",
+                    ],
+                    plugins: [
+                      {
+                        name: "tanstack-virtual-external",
+                        setup(build) {
+                          build.onResolve(
+                            { filter: /^#tanstack-|^tanstack-start-/ },
+                            (args) => ({ path: args.path, external: true }),
+                          );
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          };
+        },
+      },
       paraglideVitePlugin({
         project: "./project.inlang",
         outdir: "./src/paraglide",
@@ -49,6 +89,7 @@ const config = defineConfig(({ mode }) => {
         viteEnvironment: {
           name: "ssr",
         },
+        remoteBindings: false,
       }),
       viteTsConfigPaths({
         projects: ["./tsconfig.json"],
