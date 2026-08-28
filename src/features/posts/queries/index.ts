@@ -224,7 +224,7 @@ export function postsPagedQueryOptions(
             : {}),
           ...(uncategorized ? { uncategorized: "true" } : {}),
           ...(excludePinned !== undefined
-            ? { excludePinned: String(excludePinned) }
+            ? { excludePinned: excludePinned ? "true" : "false" }
             : {}),
           ...(offset !== undefined ? { offset: String(offset) } : {}),
           sortBy,

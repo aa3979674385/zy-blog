@@ -12,11 +12,11 @@ import { PostItem } from "@/features/theme/themes/default/components/post-item";
 import { m } from "@/paraglide/messages";
 
 export function HomePage({ posts, pinnedPosts }: HomePageProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const displayPosts = useMemo(() => {
     const pinned = (pinnedPosts ?? []).map((p) => ({ ...p, isPinned: true }));
-    const regular = posts.map((p) => ({ ...p, isPinned: false }));
+    const regular = (posts ?? []).map((p) => ({ ...p, isPinned: false }));
     const seen = new Set<number>();
     const merged = [];
     for (const p of [...pinned, ...regular]) {

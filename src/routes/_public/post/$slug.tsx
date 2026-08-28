@@ -1,4 +1,4 @@
-import { type QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import theme from "@theme";
 // 直接引入 skeleton（绕过 pages/post 的 barrel）：
@@ -149,7 +149,7 @@ export const Route = createFileRoute("/_public/post/$slug")({
             {
               type: "application/ld+json",
               children: buildArticleJsonLd({
-                authorName: loaderData.authorName,
+                authorName: loaderData.authorName ?? "",
                 canonicalHref,
                 post,
               }),

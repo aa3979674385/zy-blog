@@ -19,8 +19,8 @@ export function MobileMenu({
   user,
   logout,
 }: MobileMenuProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   return (
     <div
       className={`fixed inset-0 z-100 transition-all duration-500 ease-in-out ${

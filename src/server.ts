@@ -29,6 +29,6 @@ export default {
   },
   async scheduled(event, env, ctx) {
     const { handleScheduled } = await import("@/lib/worker/scheduled-handler");
-    await handleScheduled(event, env, ctx);
+    await handleScheduled(event as ScheduledEvent, env, ctx);
   },
 } satisfies ExportedHandler<Env>;

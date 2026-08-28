@@ -247,7 +247,7 @@ export async function getVersionedBatch<T extends z.ZodTypeAny>(
 }
 
 export async function invalidateSiteCache(
-  context: BaseContext & { executionCtx: ExecutionContext },
+  context: DbContext & { executionCtx: ExecutionContext },
 ) {
   const purgeTask = purgeSiteCDNCache(context.env);
   const kvTasks = [

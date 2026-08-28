@@ -17,7 +17,8 @@ export function PostsPage({
   totalPages,
   onPageChange,
 }: PostsPageProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isExpanded, setIsExpanded] = useState(false);
   const hasMoreTags = tags.length > INITIAL_TAG_COUNT;
   const visibleTags = isExpanded ? tags : tags.slice(0, INITIAL_TAG_COUNT);

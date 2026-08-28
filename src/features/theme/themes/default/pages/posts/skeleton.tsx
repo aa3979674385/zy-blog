@@ -4,8 +4,8 @@ import { m } from "@/paraglide/messages";
 import { INITIAL_TAG_COUNT } from "./page";
 
 export function PostsPageSkeleton() {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   return (
     <div className="w-full max-w-3xl mx-auto pb-20 px-6 md:px-0">
       {/* Header Section */}

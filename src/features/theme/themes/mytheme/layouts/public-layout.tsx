@@ -24,7 +24,8 @@ export function PublicLayout({
   isSessionLoading,
   logout,
 }: PublicLayoutProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Use the resolved (destination) location instead of useLocation(): during a
   // navigation the layout must switch to the page we are GOING to, not the page

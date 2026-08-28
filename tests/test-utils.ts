@@ -8,7 +8,7 @@ import { getDb } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 export function createTestDb() {
-  return getDb(env);
+  return getDb(env as unknown as Env);
 }
 
 export function createMockAuth() {
@@ -102,7 +102,14 @@ export function createTestContext(
 ) {
   const context = {
     db: createTestDb(),
-    env: { ...env },
+    env: {
+      ...env,
+      SEARCH_REBUILD_WORKFLOW: {
+        create: vi.fn(),
+        createBatch: vi.fn(),
+        get: vi.fn(),
+      } as unknown as Env["SEARCH_REBUILD_WORKFLOW"],
+    },
     executionCtx: createMockExecutionCtx(),
     auth: createMockAuth(),
     ...overrides,

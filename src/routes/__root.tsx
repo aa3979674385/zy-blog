@@ -48,7 +48,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       try {
         const ban = await context.queryClient.fetchQuery(bannedStatusQuery());
         if (ban?.banned) {
-          throw redirect({ to: "/banned" });
+          throw redirect({ to: "/banned", search: { email: undefined } });
         }
       } catch (e) {
         // 让 redirect 正常传播；其它错误（如 RPC 失败）忽略，避免整站崩溃
@@ -190,7 +190,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html
       lang={locale}
       suppressHydrationWarning
-      style={theme.getDocumentStyle?.(siteConfig)}
+      style={siteConfig ? theme.getDocumentStyle?.(siteConfig as never) : undefined}
     >
       <head>
         <HeadContent />

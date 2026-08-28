@@ -5,8 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { m } from "@/paraglide/messages";
 
 export function HomePageSkeleton() {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   return (
     <div className="flex flex-col w-full max-w-3xl mx-auto px-6 md:px-0 py-12 md:py-20 space-y-20">
       {/* Intro Section - Static Text Retained */}

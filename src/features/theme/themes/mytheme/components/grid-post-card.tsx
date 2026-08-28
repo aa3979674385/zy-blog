@@ -39,7 +39,8 @@ function AccessBadge({ type }: { type?: "free" | "member" | "paid" | null }) {
 
 export function GridPostCard({ post, showPinned = true }: GridPostCardProps) {
   // 发布者信息来自站点配置（单作者博客，所有文章共用同一个发布者头像/昵称）
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const avatar = siteConfig.theme.mytheme.avatar;
   const authorName = siteConfig.author;
 

@@ -7,8 +7,8 @@ import {
 import { m } from "@/paraglide/messages";
 
 export function Profile() {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   return (
     <div className="fuwari-card-base p-4">
       <Link

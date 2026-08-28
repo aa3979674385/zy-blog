@@ -33,7 +33,7 @@ export function HomePage({ posts, pinnedPosts, popularPosts }: HomePageProps) {
     }
 
     // 3. Recent fills the rest
-    for (const post of posts) {
+    for (const post of posts ?? []) {
       if (seen.has(post.slug)) continue;
       seen.add(post.slug);
       result.push({ post, pinned: false, popular: false });

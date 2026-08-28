@@ -65,7 +65,7 @@ function RouteComponent() {
     <theme.RegisterPage
       isEmailConfigured={isEmailConfigured}
       requireEmailVerification={requireEmailVerification}
-      registerForm={{ ...registerForm, turnstileProps }}
+      registerForm={{ ...registerForm, turnstileProps } as never}
       turnstileElement={turnstileElement}
     />
   );

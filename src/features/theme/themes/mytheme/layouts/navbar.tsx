@@ -114,7 +114,8 @@ export function Navbar({
   isLoading,
   bannerHeightVh,
 }: NavbarProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isHidden, setIsHidden] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 

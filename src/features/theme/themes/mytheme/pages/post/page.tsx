@@ -15,8 +15,8 @@ import { PostSummary } from "./components/post-summary";
 
 export function PostPage({ post }: PostPageProps) {
   const { data: session } = authClient.useSession();
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const copyrightNotice: string =
     siteConfig?.theme?.mytheme?.copyrightNotice ?? "";
 

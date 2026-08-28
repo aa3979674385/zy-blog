@@ -53,5 +53,5 @@ export async function deleteExpiredVerificationCodes(db: DB): Promise<number> {
   const result = await db
     .delete(emailVerificationCodes)
     .where(lte(emailVerificationCodes.expiresAt, new Date()));
-  return result.rowsAffected ?? 0;
+  return (result as { rowsAffected?: number }).rowsAffected ?? 0;
 }

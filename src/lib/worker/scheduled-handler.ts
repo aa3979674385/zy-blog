@@ -1,4 +1,3 @@
-import type { ScheduledEvent } from "cloudflare:workers";
 import { deleteExpiredVerificationCodes } from "@/features/email/data/email.data";
 import { unbanExpiredUsers } from "@/features/users/data/users.data";
 import { getDb } from "@/lib/db";

@@ -13,7 +13,8 @@ export function PublicLayout({
   isSessionLoading,
   logout,
 }: PublicLayoutProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (

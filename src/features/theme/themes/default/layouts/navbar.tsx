@@ -19,7 +19,8 @@ export function Navbar({
   navOptions,
   isLoading,
 }: NavbarProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -129,7 +130,7 @@ export function Navbar({
               <ThemeToggle />
               <LanguageSwitcher className="hidden text-muted-foreground hover:text-foreground h-8 w-8" />
               <Link
-                to="/search"
+                to="/search" search={{ page: 1 }}
                 className="text-muted-foreground hover:text-foreground h-8 w-8 flex items-center justify-center transition-colors"
                 aria-label={m.nav_search()}
               >

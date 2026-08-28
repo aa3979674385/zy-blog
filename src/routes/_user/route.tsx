@@ -56,7 +56,7 @@ function UserLayout() {
       const isToggle = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
       if (isToggle) {
         e.preventDefault();
-        navigate({ to: "/search" });
+        navigate({ to: "/search", search: { page: 1 } });
       }
     };
     window.addEventListener("keydown", onKey);

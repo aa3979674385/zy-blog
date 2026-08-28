@@ -12,8 +12,8 @@ interface FooterProps {
 }
 
 export function Footer({ navOptions }: FooterProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
-
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   return (
     <footer className="border-t border-border/40 bg-background/50 py-16 mt-32">
       <div className="max-w-3xl mx-auto px-6 md:px-0 flex flex-col md:flex-row justify-between items-center gap-8">

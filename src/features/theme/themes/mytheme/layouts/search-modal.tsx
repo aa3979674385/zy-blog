@@ -36,9 +36,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     const q = keyword.trim();
     onClose();
     if (q) {
-      navigate({ to: "/search", search: { q } });
+      navigate({ to: "/search", search: { page: 1, q } });
     } else {
-      navigate({ to: "/search" });
+      navigate({ to: "/search", search: { page: 1 } });
     }
   };
 

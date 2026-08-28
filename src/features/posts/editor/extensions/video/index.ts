@@ -53,8 +53,12 @@ export const VideoNode = Node.create({
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
-    insertVideo: (src: string) => ReturnType;
-    insertIframe: (src: string) => ReturnType;
+    video: {
+      insertVideo: (src: string) => ReturnType;
+    };
+    iframe: {
+      insertIframe: (src: string) => ReturnType;
+    };
   }
 }
 

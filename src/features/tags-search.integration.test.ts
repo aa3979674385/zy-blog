@@ -256,10 +256,11 @@ describe("Tags & Search Integration", () => {
         q: "Title",
         v: "1",
         limit: 10,
+        page: 1,
       });
-      expect(results).toHaveLength(1);
-      expect(results[0].post.title).toBe(doc.title);
-      expect(results[0].post.slug).toBe(doc.slug);
+      expect(results.results).toHaveLength(1);
+      expect(results.results[0].post.title).toBe(doc.title);
+      expect(results.results[0].post.slug).toBe(doc.slug);
     });
 
     it("should delete a document from index", async () => {
@@ -278,8 +279,9 @@ describe("Tags & Search Integration", () => {
         q: "Deleted",
         v: "1",
         limit: 10,
+        page: 1,
       });
-      expect(results).toHaveLength(1);
+      expect(results.results).toHaveLength(1);
 
       await SearchService.deleteIndex(context, { id: doc.id });
 
@@ -287,8 +289,9 @@ describe("Tags & Search Integration", () => {
         q: "Deleted",
         v: "1",
         limit: 10,
+        page: 1,
       });
-      expect(results).toHaveLength(0);
+      expect(results.results).toHaveLength(0);
     });
 
     it("should rebuild index from database", async () => {
@@ -331,10 +334,11 @@ describe("Tags & Search Integration", () => {
         q: "Database",
         v: "1",
         limit: 10,
+        page: 1,
       });
-      expect(results).toHaveLength(1);
-      expect(results[0].post.title).toBe(postData.title);
-      expect(results[0].post.tags).toContain("dbtag");
+      expect(results.results).toHaveLength(1);
+      expect(results.results[0].post.title).toBe(postData.title);
+      expect(results.results[0].post.tags).toContain("dbtag");
     });
   });
 });

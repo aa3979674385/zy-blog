@@ -104,7 +104,7 @@ export function PostEditorMetadata({
     if (!file) return;
     setIsCoverUploading(true);
     try {
-      const res = await uploadImageWithWatermark(file);
+      const res = await uploadImageWithWatermark(file) as unknown as { error?: string; data?: { url?: string } };
       if (res.error) {
         throw new Error(typeof res.error === "string" ? res.error : "上传失败");
       }

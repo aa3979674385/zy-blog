@@ -65,7 +65,7 @@ const allReadyStreamHandler = defineHandlerCallback(
         // 状态码来源随 TanStack Router 版本变更：旧版 router.stores.statusCode.get()
         // 已被移除（运行时 undefined → 抛 TypeError 致使 SSR 全站 500）。改用官方
         // renderRouterToStream 同款写法：render 时取服务端结果状态码，否则兜底 200。
-        status: router._serverResult?.type === "render" ? router._serverResult.status : 200,
+        status: (router as unknown as { _serverResult?: { type: string; status?: number } })._serverResult?.type === "render" ? (router as unknown as { _serverResult?: { status?: number } })._serverResult?.status ?? 200 : 200,
         headers: responseHeaders,
       });
     })();

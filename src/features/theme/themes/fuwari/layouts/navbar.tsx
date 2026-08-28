@@ -25,7 +25,8 @@ export function Navbar({
   isLoading,
   bannerHeightVh,
 }: NavbarProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
@@ -161,7 +162,7 @@ export function Navbar({
 
           <div className="flex items-center gap-1">
             <Link
-              to="/search"
+              to="/search" search={{ page: 1 }}
               className="hidden lg:flex items-center h-11 mr-2 rounded-lg bg-black/4 hover:bg-black/6 dark:bg-white/5 dark:hover:bg-white/10 transition-all active:scale-95 group w-52"
               aria-label={m.nav_search()}
             >
@@ -175,7 +176,7 @@ export function Navbar({
               </span>
             </Link>
             <Link
-              to="/search"
+              to="/search" search={{ page: 1 }}
               className="lg:hidden fuwari-expand-animation rounded-lg h-11 w-11 flex items-center justify-center active:scale-90 fuwari-text-75 hover:text-(--fuwari-primary)"
               aria-label={m.nav_search()}
             >

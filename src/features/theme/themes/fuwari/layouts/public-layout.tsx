@@ -19,7 +19,8 @@ export function PublicLayout({
   isSessionLoading,
   logout,
 }: PublicLayoutProps) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Use the resolved (destination) location so the layout reflects the page we
   // are navigating TO immediately, instead of lagging on the page we are leaving.

@@ -6,7 +6,8 @@ import {
 } from "@/features/config/utils/social-platforms";
 
 export function Footer() {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
+  const { siteConfig: _sc } = useRouteContext({ from: "__root__" });
+  const siteConfig = _sc!;
   const siteName = siteConfig.title?.trim() || siteConfig.author || "站点";
   const socials = siteConfig.social ?? [];
 
