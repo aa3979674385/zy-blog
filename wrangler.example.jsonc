@@ -12,8 +12,10 @@
   // 部署后首次请求自动创建管理员账号，无需手动注册或 SQL。
   // - ADMIN_EMAIL：管理员邮箱，请用 `wrangler secret put ADMIN_EMAIL` 注入。未配置时默认 admin@example.com
   // - ADMIN_PASSWORD：管理员密码，请用 `wrangler secret put ADMIN_PASSWORD` 注入。未配置时默认 admin123456
-  //   修改密码后重新部署即自动更新（首次请求触发，KV 缓存加速后续请求）
+  //   ADMIN_PASSWORD 仅用于首次创建管理员，创建后在后台修改的密码不会被后续部署覆盖
   //   使用默认凭据时控制台会输出告警，请登录后台修改密码后尽快配置正式 secret
+  // 管理员检查时机：部署后第一个请求查一次 D1（模块级标记，同一 Worker 实例不重复查），
+  // 每天凌晨 3 点定时任务兜底检查一次（见下方 triggers.crons）
   // 人机验证（CAPTCHA）配置：
   // Turnstile:
   // - VITE_TURNSTILE_SITE_KEY 为客户端站点密钥（打包进前端，用于显示验证框）

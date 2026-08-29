@@ -358,7 +358,9 @@ wrangler secret put ADMIN_PASSWORD
 ```
 
 - 首次部署后访问站点任意页面，系统在后台自动创建 `role: admin` 的用户 + 对应的密码凭证
-- 后续请求通过 KV 缓存跳过初始化检查，**零额外开销**
+- 使用 `INSERT ... ON CONFLICT DO NOTHING` 原子操作，**杜绝并发请求创建多个管理员的可能**
+- 后续请求通过模块级标记直接跳过，**零额外开销**
+- 每天凌晨 3 点定时任务兜底检查一次（防止管理员被误删）
 - **创建后不会被覆盖**：`ADMIN_PASSWORD` 仅用于首次创建。之后你在管理后台修改的密码、权限、资料等全部保留，重新部署程序更新时不会覆盖回去
 
 **忘记配置也能进：默认凭据兜底**
@@ -377,10 +379,9 @@ wrangler secret put ADMIN_PASSWORD
 
 由于密码创建后不会被环境变量覆盖，忘记密码时需手动重置：
 
-1. 在 Cloudflare Dashboard → KV 中删除键 `admin:initialized`
-2. 在 D1 数据库中删除该管理员用户行（`DELETE FROM user WHERE email = '你的管理员邮箱'` 和 `DELETE FROM account WHERE userId = 对应ID`）
-3. 设置新的 `ADMIN_PASSWORD` 环境变量后重新部署
-4. 系统检测到管理员不存在，自动用新密码重新创建
+1. 在 D1 数据库中删除该管理员用户行（`DELETE FROM user WHERE email = '你的管理员邮箱'` 和 `DELETE FROM account WHERE userId = 对应ID`）
+2. 设置新的 `ADMIN_PASSWORD` 环境变量后重新部署
+3. 系统检测到管理员不存在，自动用新密码重新创建
 
 **方式二：GitHub OAuth**
 

@@ -1,13 +1,13 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import { getAuth } from "@/lib/auth/auth.server";
-import { ensureAdminUser } from "@/lib/auth/admin-init";
 import * as ConfigRepo from "@/features/config/data/config.data";
 import {
   DEFAULT_MAINTENANCE_MESSAGE,
   getMaintenanceStatus,
   renderMaintenanceHtml,
 } from "@/features/maintenance/maintenance.service";
+import { ensureAdminUser } from "@/lib/auth/admin-init";
+import { getAuth } from "@/lib/auth/auth.server";
 import {
   CAPTCHA_TOKEN_HEADER,
   LEGACY_CAPTCHA_TOKEN_HEADER,
@@ -30,8 +30,9 @@ declare module "hono" {
 export const baseMiddleware = createMiddleware<{ Bindings: Env }>(
   async (c, next) => {
     const db = getDb(c.env);
-    // 惰性初始化管理员账号：首次请求时自动创建，后续靠 KV 快速路径跳过
-    // 使用 waitUntil 不阻塞当前请求（首次部署后第一个请求触发即可）
+    // 惰性初始化管理员账号：同一 Worker 实例只在第一个请求时查一次 D1，
+    // 后续请求靠模块级标记直接跳过（不查 KV、不查数据库）。
+    // 定时任务（每天凌晨 3 点）兜底检查一次。
     const adminInitPromise = ensureAdminUser(db, c.env).catch((e) => {
       console.error("Failed to ensure admin user:", e);
     });
@@ -51,7 +52,12 @@ export const baseMiddleware = createMiddleware<{ Bindings: Env }>(
 /** 缓存版本头：命中缓存时校验，构建 ID 不匹配的旧缓存一律作废重新生成 */
 const CACHE_VERSION_HEADER = "x-blog-build-id";
 /** 带内容 hash 的静态资源路径前缀（可安全永久缓存到浏览器） */
-const IMMUTABLE_ASSET_PREFIXES = ["/assets/", "/favicon", "/apple-touch-icon", "/web-app-manifest"];
+const IMMUTABLE_ASSET_PREFIXES = [
+  "/assets/",
+  "/favicon",
+  "/apple-touch-icon",
+  "/web-app-manifest",
+];
 
 /** 列表/搜索类页面缓存 key 需要保留的功能性 query 参数（决定返回内容） */
 const CACHE_QUERY_KEEP = new Set([

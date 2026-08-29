@@ -261,7 +261,9 @@ wrangler secret put ADMIN_PASSWORD
 ```
 
 - On first visit to any page after deploy, the system creates a `role: admin` user with the corresponding password credential in the background
-- Subsequent requests skip the init check via KV cache — **zero overhead**
+- Uses `INSERT ... ON CONFLICT DO NOTHING` atomic operation — **prevents concurrent requests from creating duplicate admins**
+- Subsequent requests skip via module-level flag — **zero overhead**
+- Daily cron job at 3 AM checks as backup (prevents admin loss from accidental deletion)
 - **No overwrite after creation**: `ADMIN_PASSWORD` is only used for initial creation. Passwords, permissions, and profile changes made in the admin panel are preserved across redeploys
 
 **Forgot to configure? Default credentials fallback**
@@ -280,10 +282,9 @@ Even if `ADMIN_EMAIL` and `ADMIN_PASSWORD` are not set, the system will auto-cre
 
 Since the password is never overwritten by the env var after creation, resetting it requires manual steps:
 
-1. In Cloudflare Dashboard → KV, delete the key `admin:initialized`
-2. In the D1 database, delete the admin user row (`DELETE FROM user WHERE email = 'your-admin-email'` and `DELETE FROM account WHERE userId = corresponding-id`)
-3. Set a new `ADMIN_PASSWORD` environment variable and redeploy
-4. The system detects no admin exists and recreates one with the new password
+1. In the D1 database, delete the admin user row (`DELETE FROM user WHERE email = 'your-admin-email'` and `DELETE FROM account WHERE userId = corresponding-id`)
+2. Set a new `ADMIN_PASSWORD` environment variable and redeploy
+3. The system detects no admin exists and recreates one with the new password
 
 **Method 2: GitHub OAuth**
 

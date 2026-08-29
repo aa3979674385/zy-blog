@@ -4,35 +4,43 @@
  * 核心原则：ADMIN_PASSWORD 仅用于首次创建，创建后不再覆盖。
  *
  * 工作流程：
- * 1. KV `admin:initialized` = "true" → 直接返回（零 DB 开销，二次部署不走后续逻辑）
- * 2. KV 标记不存在 → 查 D1 user 表确认管理员是否存在
- *    - 不存在 → 创建 user + account（用 ADMIN_PASSWORD 生成 argon2 哈希）
- *    - 已存在 → 不碰密码，只补上 KV 标记（管理员在后台改过的密码不受影响）
- * 3. 写入 KV 标记，后续请求直接走第一层快速路径
+ * 1. 模块级标记 `adminChecked` = true → 直接返回（同一 Worker 实例只查一次）
+ * 2. 首次请求 → 用 `INSERT ... ON CONFLICT DO NOTHING` 原子插入管理员
+ *    - 管理员不存在 → 创建 user + account（用 ADMIN_PASSWORD 生成 argon2 哈希）
+ *    - 已存在 → 静默跳过，不碰密码
+ * 3. 定时任务（每天凌晨 3 点）兜底检查一次
  *
  * 兜底机制：ADMIN_EMAIL / ADMIN_PASSWORD 未配置时自动使用默认值，
  * 部署后仍可登录管理后台修改密码，不会因遗漏配置而导致无法进入。
  *
  * 重置管理员密码（忘记密码时）：
- *   1. 在 Cloudflare Dashboard 删除 KV 键 `admin:initialized`
- *   2. 在 D1 中删除该管理员用户行（或其 account 行的 password 字段）
- *   3. 重新部署 → 系统以 ADMIN_PASSWORD 环境变量重新创建管理员
+ *   1. 在 D1 中删除该管理员用户行
+ *   2. 重新部署 → 系统以 ADMIN_PASSWORD 环境变量重新创建管理员
  */
 import { eq } from "drizzle-orm";
-import { account, user } from "@/lib/db/schema/auth.table";
 import { getPasswordHasher } from "@/lib/auth/utils";
+import { account, user } from "@/lib/db/schema/auth.table";
 import { serverEnv } from "@/lib/env/server.env";
 
-const KV_INITIALIZED = "admin:initialized";
-
-/** 默认凭据（与环境变量 schema 的 catch 值保持一致） */
 const DEFAULT_ADMIN_EMAIL = "admin@example.com";
 const DEFAULT_ADMIN_PASSWORD = "admin123456";
 
-export async function ensureAdminUser(
-  db: DB,
-  env: Env,
-): Promise<void> {
+/**
+ * 模块级标记：同一个 Worker 实例（isolate）只检查一次。
+ * 部署/更新后新 isolate 启动时自动重置为 false，第一个请求触发检查。
+ */
+let adminChecked = false;
+
+/** 重置标记，供定时任务调用后重新允许下次请求检查 */
+export function resetAdminCheckFlag(): void {
+  adminChecked = false;
+}
+
+export async function ensureAdminUser(db: DB, env: Env): Promise<void> {
+  // 同一 isolate 内，后续请求直接跳过
+  if (adminChecked) return;
+  adminChecked = true;
+
   const { ADMIN_EMAIL, ADMIN_PASSWORD } = serverEnv(env);
 
   // 使用默认凭据时在控制台醒目告警，提醒尽快修改
@@ -46,25 +54,12 @@ export async function ensureAdminUser(
     );
   }
 
-  // ---- 第一层：KV 快速路径 ----
-  // KV 标记存在 = 已初始化过，直接返回，不查库、不碰密码
-  const initialized = await env.KV.get(KV_INITIALIZED);
-  if (initialized === "true") return;
-
-  // ---- 第二层：D1 查询 ----
-  const existing = await db
-    .select({ id: user.id, email: user.email })
-    .from(user)
-    .where(eq(user.email, ADMIN_EMAIL))
-    .limit(1);
-
-  if (existing.length === 0) {
-    // ---- 首次创建管理员 ----
-    const hasher = getPasswordHasher(env);
-    const hashedPw = await hasher.hash(ADMIN_PASSWORD);
-    const userId = crypto.randomUUID();
-    const now = new Date();
-    await db.insert(user).values({
+  // ---- 原子插入：email 冲突时静默跳过，杜绝并发竞态 ----
+  const userId = crypto.randomUUID();
+  const now = new Date();
+  await db
+    .insert(user)
+    .values({
       id: userId,
       name: "Admin",
       email: ADMIN_EMAIL,
@@ -72,21 +67,45 @@ export async function ensureAdminUser(
       role: "admin",
       createdAt: now,
       updatedAt: now,
-    });
+    })
+    .onConflictDoNothing({ target: user.email });
+
+  // ---- 查出实际用户 ID（可能是刚创建的，也可能是已存在的）----
+  const existing = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.email, ADMIN_EMAIL))
+    .limit(1);
+
+  if (existing.length === 0) {
+    // 极端情况：插入失败且查不到，下次请求会重试（标记已在入口设为 true，
+    // 但定时任务会 reset 后重试）
+    console.error("[ADMIN INIT] Failed to create or find admin user.");
+    return;
+  }
+
+  const actualUserId = existing[0].id;
+
+  // ---- 检查 account 是否存在，不存在才创建（不碰已有密码）----
+  const existingAccount = await db
+    .select({ id: account.id })
+    .from(account)
+    .where(eq(account.userId, actualUserId))
+    .limit(1);
+
+  if (existingAccount.length === 0) {
+    const hasher = getPasswordHasher(env);
+    const hashedPw = await hasher.hash(ADMIN_PASSWORD);
     await db.insert(account).values({
       id: crypto.randomUUID(),
       accountId: ADMIN_EMAIL,
       providerId: "credential",
-      userId,
+      userId: actualUserId,
       password: hashedPw,
       createdAt: now,
       updatedAt: now,
     });
   }
-  // 管理员已存在 → 不碰密码，不碰用户数据
+  // 管理员已存在且 account 已存在 → 不碰密码，不碰用户数据
   // 管理员在后台修改的密码、权限、资料等全部保留
-
-  // ---- 第三层：写入 KV 标记 ----
-  // 之后所有请求都走第一层快速路径，零 DB 开销
-  await env.KV.put(KV_INITIALIZED, "true");
 }
