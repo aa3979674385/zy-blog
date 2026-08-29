@@ -75,6 +75,7 @@ jobs:
           echo "BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}" >> $GITHUB_ENV
           echo "BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}" >> $GITHUB_ENV
           echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> $GITHUB_ENV
           echo "GITHUB_CLIENT_ID=${{ secrets.GH_CLIENT_ID }}" >> $GITHUB_ENV
           echo "GITHUB_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }}" >> $GITHUB_ENV
           echo "GITHUB_TOKEN=${{ secrets.GH_TOKEN }}" >> $GITHUB_ENV
@@ -107,6 +108,7 @@ jobs:
           {
             "BETTER_AUTH_SECRET": "$BETTER_AUTH_SECRET",
             "ADMIN_EMAIL": "$ADMIN_EMAIL",
+            "ADMIN_PASSWORD": "$ADMIN_PASSWORD",
             "GITHUB_CLIENT_SECRET": "$GITHUB_CLIENT_SECRET",
             "CLOUDFLARE_ZONE_ID": "$CLOUDFLARE_ZONE_ID",
             "CLOUDFLARE_PURGE_API_TOKEN": "$CLOUDFLARE_PURGE_API_TOKEN",
