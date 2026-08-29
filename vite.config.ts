@@ -64,10 +64,10 @@ const config = defineConfig(({ mode }) => {
                     plugins: [
                       {
                         name: "tanstack-virtual-external",
-                        setup(build: { onResolve: (a: unknown, b: (args: { path: string }) => unknown) => void }) {
+                        setup(build) {
                           build.onResolve(
                             { filter: /^#tanstack-|^tanstack-start-/ },
-                            (args: { path: string }) => ({ path: args.path, external: true }),
+                            (args) => ({ path: args.path, external: true }),
                           );
                         },
                       },

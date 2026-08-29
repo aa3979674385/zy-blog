@@ -4,6 +4,7 @@ import theme from "@theme";
 import { z } from "zod";
 import { siteConfigQuery, siteDomainQuery } from "@/features/config/queries";
 import { categoriesQueryOptions } from "@/features/categories/queries";
+import type { Category } from "@/features/categories/categories.schema";
 import { postsPagedQueryOptions } from "@/features/posts/queries";
 import {
   PostTagNameSchema,
@@ -56,7 +57,7 @@ export const Route = createFileRoute("/_public/posts")({
     ]);
 
     const categoryName = deps.categoryId
-      ? categories?.find((c) => c.id === deps.categoryId)?.name
+      ? categories?.find((c: Category) => c.id === deps.categoryId)?.name
       : undefined;
     const title = categoryName
       ? categoryName
@@ -115,7 +116,7 @@ function RouteComponent() {
   );
 
   const categoryName = categoryId
-    ? categories.find((c) => c.id === categoryId)?.name
+    ? categories.find((c: Category) => c.id === categoryId)?.name
     : undefined;
 
   const handleTagClick = (clickedTag?: string) => {

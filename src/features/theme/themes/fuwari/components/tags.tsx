@@ -51,7 +51,7 @@ export function Tags() {
           isExpanded || !showToggle ? "max-h-250" : "max-h-40"
         }`}
       >
-        {tags.map((tag) => (
+        {tags.map((tag: Tag) => (
           <Link
             key={tag.id}
             to="/posts"

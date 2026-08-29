@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { tagsQueryOptions } from "@/features/tags/queries";
+import type { Tag } from "@/features/tags/tags.schema";
 import { m } from "@/paraglide/messages";
 
 export function TagsSkeleton() {
@@ -51,7 +52,7 @@ export function Tags() {
           isExpanded || !showToggle ? "max-h-250" : "max-h-40"
         }`}
       >
-        {tags.map((tag) => (
+        {tags.map((tag: Tag) => (
           <Link
             key={tag.id}
             to="/posts"

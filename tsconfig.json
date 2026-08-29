@@ -30,5 +30,13 @@
     "**/*.tsx",
     "./worker-configuration.d.ts",
     ".release-it.ts"
+  ],
+  "exclude": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.node.config.ts",
+    "drizzle.config.ts",
+    "auth-cli.ts",
+    "scripts/**/*.ts"
   ]
 }

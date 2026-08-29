@@ -8,7 +8,7 @@ import {
   getTagsFn,
   getTagsWithCountAdminFn,
 } from "../api/tags.api";
-import type { GetTagsInput } from "../tags.schema";
+import type { GetTagsInput, TagWithCount } from "../tags.schema";
 
 export const TAGS_KEYS = {
   all: ["tags"] as const,
