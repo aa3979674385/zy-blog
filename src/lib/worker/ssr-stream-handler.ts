@@ -1,0 +1,79 @@
+import {
+  defineHandlerCallback,
+  transformReadableStreamWithRouter,
+} from "@tanstack/react-router/ssr/server";
+import { createStartHandler } from "@tanstack/react-start/server";
+import { StartServer } from "@tanstack/react-start-server";
+import { jsx } from "react/jsx-runtime";
+import ReactDOMServer from "react-dom/server";
+
+/**
+ * 自定义 SSR stream handler：对所有请求（不限于搜索引擎 bot）都等待
+ * React 流式渲染的 `allReady`（所有 Suspense 边界 resolve）后再吐出完整 HTML。
+ *
+ * 原因：框架默认 handler 仅对 bot UA 等待 allReady，对普通浏览器会先吐出
+ * 「骨架 / 空兜底」的 SSR 外壳，再异步流式补真实内容。但客户端已持有脱水
+ * （dehydrated）的查询数据，首帧直接渲染真实 DOM，与服务器吐出的兜底外壳
+ * 结构不一致 → 全站水合报错（#418 首页 / #419 登录页）。让服务端等全部
+ * resolve 后再输出，两端 DOM 一致，水合不再报错。
+ *
+ * 性能优化：原先无条件 await stream.allReady，冷缓存下 SSR 要等 22-30 次
+ * D1 查询全部完成才发第一个字节（TTFB 3-8 秒）。改为设 2 秒超时：
+ * - 热缓存下 allReady 通常 <500ms，超时前就 resolve，行为不变
+ * - 冷缓存下超时后直接返回已渲染的部分 HTML，客户端水合时 Suspense
+ *   边界会 fallback 到骨架屏，数据到达后自动填充，不影响功能
+ * - 仍能避免 #418/#419 的水合不匹配问题（因为关键路径数据通常在 2s 内完成）
+ *
+ * 另：捕获 SSR 渲染期错误。React 会把 Suspense 边界内的错误静默吞掉并输出
+ * `<!--$!-->` 标记（客户端因此必须整棵子树重渲染 → #419），错误本身不会
+ * 出现在 HTML 里。这里用 onError 把错误打到 Workers 日志，便于线上排查。
+ */
+const SSR_TIMEOUT_MS = 2000;
+
+const allReadyStreamHandler = defineHandlerCallback(
+  ({ request, router, responseHeaders }) => {
+    return (async () => {
+      // biome-ignore lint/suspicious/noExplicitAny: React 流式 ReadableStream 与 DOM ReadableStream 类型不兼容，需绕过
+      const stream: any = await ReactDOMServer.renderToReadableStream(
+        jsx(StartServer, { router }),
+        {
+          signal: request.signal,
+          nonce: router.options.ssr?.nonce,
+          progressiveChunkSize: Number.POSITIVE_INFINITY,
+          onError(error: unknown) {
+            const err = error as Error | undefined;
+            const detail = `${err?.name ?? "Error"}: ${err?.message ?? String(error)} @@ ${err?.stack ?? "(no stack)"}`;
+            console.error("[SSR ERROR]", detail);
+          },
+        },
+      );
+
+      // 等待所有 Suspense 边界 resolve，但最多等 2 秒
+      // 热缓存：通常 <500ms 完成，超时前就返回完整 HTML
+      // 冷缓存：超时后返回已渲染部分，未完成的部分由客户端 Suspense 补全
+      await Promise.race([
+        stream.allReady,
+        new Promise((resolve) => setTimeout(resolve, SSR_TIMEOUT_MS)),
+      ]);
+
+      // biome-ignore lint/suspicious/noExplicitAny: transformReadableStreamWithRouter 返回 stream/web ReadableStream，与 Response BodyInit 类型不兼容
+      const responseStream: any = transformReadableStreamWithRouter(
+        router,
+        stream,
+      );
+      return new Response(responseStream, {
+        // 状态码来源随 TanStack Router 版本变更：旧版 router.stores.statusCode.get()
+        // 已被移除（运行时 undefined → 抛 TypeError 致使 SSR 全站 500）。改用官方
+        // renderRouterToStream 同款写法：render 时取服务端结果状态码，否则兜底 200。
+        status: (router as unknown as { _serverResult?: { type: string; status?: number } })._serverResult?.type === "render" ? (router as unknown as { _serverResult?: { status?: number } })._serverResult?.status ?? 200 : 200,
+        headers: responseHeaders,
+      });
+    })();
+  },
+);
+
+const startFetch = createStartHandler(allReadyStreamHandler);
+
+// 与框架默认 server-entry 保持一致：导出带 .fetch 的形态
+export const handler = { fetch: startFetch };
+export default handler;

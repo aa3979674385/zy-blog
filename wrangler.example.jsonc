@@ -1,0 +1,200 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zy-blog",
+  "compatibility_date": "2026-02-17",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "main": "./src/server.ts",
+  "observability": {
+    "enabled": true
+  },
+  "keep_vars": true,
+  // 管理员账号（均可省略，省略时使用默认凭据兜底）：
+  // 部署后首次请求自动创建管理员账号，无需手动注册或 SQL。
+  // - ADMIN_EMAIL：管理员邮箱，请用 `wrangler secret put ADMIN_EMAIL` 注入。未配置时默认 admin@example.com
+  // - ADMIN_PASSWORD：管理员密码，请用 `wrangler secret put ADMIN_PASSWORD` 注入。未配置时默认 admin123456
+  //   ADMIN_PASSWORD 仅用于首次创建管理员，创建后在后台修改的密码不会被后续部署覆盖
+  //   使用默认凭据时控制台会输出告警，请登录后台修改密码后尽快配置正式 secret
+  // 管理员检查时机：部署后第一个请求查一次 D1（模块级标记，同一 Worker 实例不重复查），
+  // 每天凌晨 3 点定时任务兜底检查一次（见下方 triggers.crons）
+  // 人机验证（CAPTCHA）配置：
+  // Turnstile:
+  // - VITE_TURNSTILE_SITE_KEY 为客户端站点密钥（打包进前端，用于显示验证框）
+  // - TURNSTILE_SECRET_KEY 为服务端密钥，切勿写进此文件，请用 `wrangler secret put TURNSTILE_SECRET_KEY` 注入
+  // 极验 GeeTest v4（与 Turnstile 二选一，由运行时 secret CAPTCHA_PROVIDER 决定）：
+  // - VITE_GEETEST_CAPTCHA_ID 验证 ID（公开值，前端渲染与服务端二次校验都会用到，此处作为 var 注入）
+  // - GEETEST_CAPTCHA_KEY 极验后台的 captcha_key（私钥），务必保密，请用 `wrangler secret put GEETEST_CAPTCHA_KEY` 注入
+  // - CAPTCHA_PROVIDER 当前生效服务商：turnstile | geetest | none，请用 `wrangler secret put CAPTCHA_PROVIDER` 注入
+  "vars": {
+    "VITE_TURNSTILE_SITE_KEY": "YOUR_TURNSTILE_SITE_KEY",
+    "VITE_GEETEST_CAPTCHA_ID": "YOUR_GEETEST_CAPTCHA_ID",
+    "BETTER_AUTH_URL": "https://DOMAIN_PLACEHOLDER",
+    "DOMAIN": "DOMAIN_PLACEHOLDER",
+    "GITHUB_CLIENT_ID": "GITHUB_CLIENT_ID_PLACEHOLDER"
+  },
+  "routes": [
+    {
+      "pattern": "DOMAIN_PLACEHOLDER",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "D1_DATABASE_ID",
+      "migrations_dir": "migrations",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "bucket_name": "bucket-name-placeholder",
+      "binding": "R2",
+      "remote": true
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "KV_NAMESPACE_ID",
+      "remote": true
+    },
+    {
+      "binding": "OAUTH_KV",
+      "id": "KV_NAMESPACE_ID",
+      "remote": true
+    }
+  ],
+  "workflows": [
+    {
+      "name": "post-process-workflow",
+      "binding": "POST_PROCESS_WORKFLOW",
+      "class_name": "PostProcessWorkflow"
+    },
+    {
+      "name": "post-auto-snapshot-workflow",
+      "binding": "POST_AUTO_SNAPSHOT_WORKFLOW",
+      "class_name": "PostAutoSnapshotWorkflow"
+    },
+    {
+      "name": "comment-moderation-workflow",
+      "binding": "COMMENT_MODERATION_WORKFLOW",
+      "class_name": "CommentModerationWorkflow"
+    },
+    {
+      "name": "scheduled-publish-workflow",
+      "binding": "SCHEDULED_PUBLISH_WORKFLOW",
+      "class_name": "ScheduledPublishWorkflow"
+    },
+    {
+      "name": "search-rebuild-workflow",
+      "binding": "SEARCH_REBUILD_WORKFLOW",
+      "class_name": "SearchRebuildWorkflow"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "RateLimiter"
+      },
+      {
+        "name": "PASSWORD_HASHER",
+        "class_name": "PasswordHasher"
+      }
+    ]
+  },
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "queues": {
+    "producers": [{ "binding": "QUEUE", "queue": "blog-queue" }],
+    "consumers": [
+      {
+        "queue": "blog-queue",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "rate-limiter-v1",
+      "new_sqlite_classes": ["RateLimiter"]
+    },
+    {
+      "tag": "password-hasher-v1",
+      "new_sqlite_classes": ["PasswordHasher"]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 3 * * *"
+    ]
+  },
+  "env": {
+    "test": {
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "RATE_LIMITER",
+            "class_name": "RateLimiter"
+          },
+          {
+            "name": "PASSWORD_HASHER",
+            "class_name": "PasswordHasher"
+          }
+        ]
+      },
+      "kv_namespaces": [
+        {
+          "binding": "KV"
+        },
+        {
+          "binding": "OAUTH_KV"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB"
+        }
+      ],
+      "workflows": [
+        {
+          "name": "post-process-workflow",
+          "binding": "POST_PROCESS_WORKFLOW",
+          "class_name": "PostProcessWorkflow"
+        },
+        {
+          "name": "post-auto-snapshot-workflow",
+          "binding": "POST_AUTO_SNAPSHOT_WORKFLOW",
+          "class_name": "PostAutoSnapshotWorkflow"
+        },
+        {
+          "name": "comment-moderation-workflow",
+          "binding": "COMMENT_MODERATION_WORKFLOW",
+          "class_name": "CommentModerationWorkflow"
+        },
+        {
+          "name": "scheduled-publish-workflow",
+          "binding": "SCHEDULED_PUBLISH_WORKFLOW",
+          "class_name": "ScheduledPublishWorkflow"
+        },
+        {
+          "name": "search-rebuild-workflow",
+          "binding": "SEARCH_REBUILD_WORKFLOW",
+          "class_name": "SearchRebuildWorkflow"
+        }
+      ],
+      "queues": {
+        "producers": [{ "binding": "QUEUE", "queue": "blog-queue" }]
+      }
+    }
+  }
+}

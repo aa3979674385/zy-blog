@@ -1,0 +1,444 @@
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
+import type {
+  GetPostsCountInput,
+  GetPostsInput,
+  PostWithToc,
+} from "@/features/posts/schema/posts.schema";
+import {
+  normalizePostTagName,
+  PostItemSchema,
+  PostListResponseSchema,
+  PostPagedResponseSchema,
+  PostWithTocSchema,
+} from "@/features/posts/schema/posts.schema";
+import { apiClient } from "@/lib/api-client";
+import { isSSR } from "@/lib/utils";
+import { generateTableOfContents } from "@/features/posts/utils/toc";
+import {
+  getPostRevisionFn,
+  listPostRevisionsFn,
+} from "../api/post-revisions.admin.api";
+import {
+  findPostByIdFn,
+  getCategoriesForPostFilterFn,
+  getUncategorizedCountForPostFilterFn,
+} from "../api/posts.admin.api";
+import {
+  findPostBySlugFn,
+  findPostByIdPublicFn,
+  getPinnedPostsFn,
+  getPopularPostsFn,
+  getPostsCursorFn,
+  getPostsPagedFn,
+  getRelatedPostsFn,
+} from "../api/posts.public.api";
+
+export const POSTS_KEYS = {
+  all: ["posts"] as const,
+
+  // Parent keys (static arrays for prefix invalidation)
+  pinned: ["posts", "pinned"] as const,
+  lists: ["posts", "list"] as const,
+  details: ["posts", "detail"] as const,
+  recent: ["posts", "recent"] as const,
+  popular: ["posts", "popular"] as const,
+  adminLists: ["posts", "admin-list"] as const,
+  counts: ["posts", "count"] as const,
+  revisions: ["posts", "revisions"] as const,
+  revisionDetails: ["posts", "revision-detail"] as const,
+
+  // Child keys (functions for specific queries)
+  list: (
+    filters: {
+      tagName?: string;
+      categoryId?: number;
+      limit?: number;
+      uncategorized?: boolean;
+    } = {},
+  ) =>
+    [
+      "posts",
+      "list",
+      {
+        ...filters,
+        tagName: normalizePostTagName(filters.tagName),
+      },
+    ] as const,
+  detail: (idOrSlug: number | string) => ["posts", "detail", idOrSlug] as const,
+  related: (slug: string, limit?: number) =>
+    ["posts", "related", slug, limit] as const,
+  adminList: (params: GetPostsInput) =>
+    ["posts", "admin-list", params] as const,
+  count: (params: GetPostsCountInput) => ["posts", "count", params] as const,
+  paged: (
+    filters: {
+      page?: number;
+      tagName?: string;
+      categoryId?: number;
+      limit?: number;
+      uncategorized?: boolean;
+      excludePinned?: boolean;
+      offset?: number;
+      sortBy?: string;
+      sortDir?: string;
+    } = {},
+  ) =>
+    [
+      "posts",
+      "list",
+      "paged",
+      {
+        ...filters,
+        tagName: normalizePostTagName(filters.tagName),
+      },
+    ] as const,
+  revisionList: (postId: number) => ["posts", "revisions", postId] as const,
+  revisionDetail: (postId: number, revisionId: number) =>
+    ["posts", "revision-detail", postId, revisionId] as const,
+};
+
+export function recentPostsQuery(limit: number) {
+  return queryOptions({
+    queryKey: [...POSTS_KEYS.recent, limit],
+    queryFn: async () => {
+      if (isSSR) {
+        const result = await getPostsCursorFn({ data: { limit } });
+        return result.items;
+      }
+      const res = await apiClient.posts.$get({
+        query: { limit: String(limit) },
+      });
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      return PostListResponseSchema.parse(await res.json()).items;
+    },
+  });
+}
+
+export function postsInfiniteQueryOptions(
+  filters: {
+    tagName?: string;
+    categoryId?: number;
+    limit?: number;
+    uncategorized?: boolean;
+  } = {},
+) {
+  const pageSize = filters.limit ?? 12;
+  const tagName = normalizePostTagName(filters.tagName);
+  const uncategorized = filters.uncategorized;
+  const categoryId = filters.categoryId;
+  return infiniteQueryOptions({
+    queryKey: POSTS_KEYS.list({ ...filters, tagName, uncategorized, categoryId }),
+    queryFn: async ({ pageParam }) => {
+      if (isSSR) {
+        return await getPostsCursorFn({
+          data: {
+            cursor: pageParam,
+            limit: pageSize,
+            tagName,
+            categoryId,
+            uncategorized,
+          },
+        });
+      }
+      const res = await apiClient.posts.$get({
+        query: {
+          cursor: pageParam?.toString(),
+          limit: String(pageSize),
+          tagName,
+          ...(categoryId !== undefined
+            ? { categoryId: String(categoryId) }
+            : {}),
+          ...(uncategorized ? { uncategorized: "1" } : {}),
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      return PostListResponseSchema.parse(await res.json());
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as number | undefined,
+  });
+}
+
+export function postsPagedQueryOptions(
+  filters: {
+    page?: number;
+    tagName?: string;
+    categoryId?: number;
+    limit?: number;
+    uncategorized?: boolean;
+    excludePinned?: boolean;
+    offset?: number;
+    sortBy?: "publishedAt" | "updatedAt" | "createdAt" | "title";
+    sortDir?: "asc" | "desc";
+  } = {},
+) {
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = filters.limit ?? 12;
+  const tagName = normalizePostTagName(filters.tagName);
+  const categoryId = filters.categoryId;
+  const uncategorized = filters.uncategorized;
+  const excludePinned = filters.excludePinned;
+  const offset = filters.offset;
+  const sortBy = filters.sortBy ?? "publishedAt";
+  const sortDir = filters.sortDir ?? "desc";
+
+  return queryOptions({
+    queryKey: POSTS_KEYS.paged({
+      ...filters,
+      page,
+      tagName,
+      categoryId,
+      uncategorized,
+      excludePinned,
+      offset,
+      sortBy,
+      sortDir,
+    }),
+    queryFn: async () => {
+      // SSR 阶段直接调 serverFn（服务端内执行，不产生 HTTP 往返）；
+      // 客户端水合后走 /api/posts/paged —— 该 API 带 CDN 缓存头（s-maxage=1 年），
+      // 首页/分类页列表数据从此有 CDN 边缘缓存兜底，发文章时 purge 刷新，减少 KV 写配额压力。
+      if (isSSR) {
+        const result = await getPostsPagedFn({
+          data: {
+            page,
+            limit: pageSize,
+            tagName,
+            categoryId,
+            uncategorized,
+            excludePinned,
+            offset,
+            sortBy,
+            sortDir,
+          },
+        });
+        return PostPagedResponseSchema.parse(result);
+      }
+      const res = await apiClient.posts.paged.$get({
+        query: {
+          page: String(page),
+          limit: String(pageSize),
+          tagName,
+          ...(categoryId !== undefined
+            ? { categoryId: String(categoryId) }
+            : {}),
+          ...(uncategorized ? { uncategorized: "true" } : {}),
+          ...(excludePinned !== undefined
+            ? { excludePinned: excludePinned ? "true" : "false" }
+            : {}),
+          ...(offset !== undefined ? { offset: String(offset) } : {}),
+          sortBy,
+          sortDir,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      return PostPagedResponseSchema.parse(await res.json());
+    },
+  });
+}
+
+export function postBySlugQuery(slug: string) {
+  return queryOptions({
+    queryKey: POSTS_KEYS.detail(slug),
+    queryFn: async () => {
+      if (isSSR) {
+        const res = await findPostBySlugFn({ data: { slug } });
+        if (!res) return null;
+        // 与 postByIdQuery 返回同一类型，确保详情页 primaryPostQuery 的两侧缓存 key/类型一致
+        return { ...res, isSynced: true, hasPublicCache: true } as PostWithToc & {
+          isSynced: boolean;
+          hasPublicCache: boolean;
+        };
+      }
+      const res = await apiClient.post[":slug"].$get({ param: { slug } });
+      if (!res.ok) throw new Error("Failed to fetch post");
+      const data = await res.json();
+      return {
+        ...PostWithTocSchema.parse(data),
+        isSynced: true,
+        hasPublicCache: true,
+      } as PostWithToc & { isSynced: boolean; hasPublicCache: boolean };
+    },
+  });
+}
+
+export function postByIdQuery(id: number) {
+  return queryOptions({
+    queryKey: POSTS_KEYS.detail(id),
+    queryFn: async () => {
+      if (isSSR) {
+        const res = await findPostByIdFn({ data: { id } });
+        if (!res) return null;
+        // findPostById 不返回 toc，这里补齐成 PostWithToc，保证详情页目录正常
+        return {
+          ...PostWithTocSchema.parse({ ...res, toc: generateTableOfContents(res.contentJson) }),
+          isSynced: res.isSynced,
+          hasPublicCache: res.hasPublicCache,
+        } as PostWithToc & { isSynced: boolean; hasPublicCache: boolean };
+      }
+      // 客户端走公开 API（与 postBySlugQuery 一致，匿名可读），不走需登录的 admin serverFn
+      const res = await apiClient.post["by-id"][":id"].$get({
+        param: { id: String(id) },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return {
+        ...PostWithTocSchema.parse({
+          ...data,
+          toc: generateTableOfContents(data.contentJson),
+        }),
+        isSynced: data.isSynced,
+        hasPublicCache: data.hasPublicCache,
+      } as PostWithToc & { isSynced: boolean; hasPublicCache: boolean };
+    },
+  });
+}
+
+/**
+ * 公开版「按 id 取文章」查询，供前台详情页 id 模式使用。
+ *  - SSR 走无鉴权的 findPostByIdPublicFn（仅已发布），匿名访客整页刷新也能拿到数据。
+ *  - 客户端走公开 API /api/post/by-id/:id（匿名可读），与 postBySlugQuery 一致。
+ *  - queryKey 与 postByIdQuery 同为 POSTS_KEYS.detail(id)，保证 loader(SSR)/组件(客户端) 水合命中同一份缓存。
+ *
+ * 注意：编辑器（edit.$id.tsx）仍用带鉴权的 postByIdQuery，以允许管理员加载草稿，不要混用。
+ */
+export function postByIdPublicQuery(id: number) {
+  return queryOptions({
+    queryKey: POSTS_KEYS.detail(id),
+    queryFn: async () => {
+      if (isSSR) {
+        const res = await findPostByIdPublicFn({ data: { id } });
+        if (!res) return null;
+        return {
+          ...PostWithTocSchema.parse({ ...res, toc: generateTableOfContents(res.contentJson) }),
+          isSynced: res.isSynced,
+          hasPublicCache: res.hasPublicCache,
+        } as PostWithToc & { isSynced: boolean; hasPublicCache: boolean };
+      }
+      const res = await apiClient.post["by-id"][":id"].$get({
+        param: { id: String(id) },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return {
+        ...PostWithTocSchema.parse({
+          ...data,
+          toc: generateTableOfContents(data.contentJson),
+        }),
+        isSynced: data.isSynced,
+        hasPublicCache: data.hasPublicCache,
+      } as PostWithToc & { isSynced: boolean; hasPublicCache: boolean };
+    },
+  });
+}
+
+/**
+ * 按分类 id 拉取已发布文章的最新 N 篇（首页分类标签使用）。
+ * 内部走 `getPostsCursorFn({categoryId, limit})`，只取首页一页。
+ */
+export function postsByCategoryQuery(categoryId: number, limit: number) {
+  return queryOptions({
+    queryKey: ["posts", "by-category", categoryId, limit],
+    queryFn: async () => {
+      if (isSSR) {
+        const result = await getPostsCursorFn({
+          data: { limit, categoryId },
+        });
+        return result.items;
+      }
+      const res = await apiClient.posts.$get({
+        query: {
+          limit: String(limit),
+          categoryId: String(categoryId),
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch category posts");
+      return PostListResponseSchema.parse(await res.json()).items;
+    },
+  });
+}
+
+export function relatedPostsQuery(slug: string, limit?: number) {
+  return queryOptions({
+    queryKey: POSTS_KEYS.related(slug, limit),
+    queryFn: async () => {
+      if (isSSR) {
+        return await getRelatedPostsFn({ data: { slug, limit } });
+      }
+      const res = await apiClient.post[":slug"].related.$get({
+        param: { slug },
+        query: { limit: limit != null ? String(limit) : undefined },
+      });
+      if (!res.ok) throw new Error("Failed to fetch related posts");
+      const json = await res.json();
+      const result = PostItemSchema.array().safeParse(json);
+      if (!result.success) {
+        console.error(
+          JSON.stringify({
+            message: "related posts response parse failed",
+            error: result.error.message,
+            received: typeof json,
+          }),
+        );
+        return [];
+      }
+      return result.data;
+    },
+  });
+}
+
+export function postRevisionListQuery(postId: number) {
+  return queryOptions({
+    queryKey: POSTS_KEYS.revisionList(postId),
+    queryFn: () => listPostRevisionsFn({ data: { postId } }),
+  });
+}
+
+export function postRevisionDetailQuery(postId: number, revisionId: number) {
+  return queryOptions({
+    queryKey: POSTS_KEYS.revisionDetail(postId, revisionId),
+    queryFn: async () =>
+      (await getPostRevisionFn({ data: { postId, revisionId } })) ?? null,
+  });
+}
+
+export const pinnedPostsQuery = queryOptions({
+  queryKey: POSTS_KEYS.pinned,
+  queryFn: () => getPinnedPostsFn(),
+});
+
+export function popularPostsQuery(limit?: number) {
+  return queryOptions({
+    queryKey: [...POSTS_KEYS.popular, limit],
+    queryFn: async () => {
+      // SSR 走 serverFn；客户端走 /api/posts/popular（CDN 短缓存 1h，
+      // 服务端仍走 KV posts:list 版本化缓存兜底，避免每次进详情页都直连 D1）。
+      if (isSSR) {
+        return await getPopularPostsFn({ data: { limit } });
+      }
+      const res = await apiClient.posts.popular.$get({
+        query: limit != null ? { limit: String(limit) } : {},
+      });
+      if (!res.ok) throw new Error("Failed to fetch popular posts");
+      return PostItemSchema.array().parse(await res.json());
+    },
+  });
+}
+
+/** 文章筛选器用的全量分类查询（post.view 权限） */
+export function postFilterCategoriesQueryOptions() {
+  return queryOptions({
+    queryKey: ["postFilter", "categories"],
+    queryFn: () => getCategoriesForPostFilterFn(),
+    staleTime: 60_000,
+  });
+}
+
+/** 文章筛选器用的未分类计数查询（post.view 权限） */
+export function postFilterUncategorizedCountQueryOptions() {
+  return queryOptions({
+    queryKey: ["postFilter", "uncategorizedCount"],
+    queryFn: () => getUncategorizedCountForPostFilterFn(),
+    staleTime: 60_000,
+  });
+}

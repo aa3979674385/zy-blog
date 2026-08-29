@@ -1,0 +1,90 @@
+import type { JSONContent } from "@tiptap/react";
+import { relations } from "drizzle-orm";
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
+import { createdAt, id, updatedAt } from "./helper";
+
+export const POST_STATUSES = ["draft", "published"] as const;
+
+export const PostsTable = sqliteTable(
+  "posts",
+  {
+    id,
+    title: text().notNull(),
+    summary: text(),
+    readTimeInMinutes: integer("read_time_in_minutes").default(1).notNull(),
+    slug: text().notNull().unique(),
+
+    contentJson: text("content_json", { mode: "json" }).$type<JSONContent>(),
+    publicContentJson: text("public_content_json", {
+      mode: "json",
+    }).$type<JSONContent>(),
+    /** 文章封面图（可选）。留空时由后端自动从正文第一张图抓取作为兜底。 */
+    coverImage: text("cover_image"),
+    status: text("status", { enum: POST_STATUSES }).notNull().default("draft"),
+    /** 亲自测试状态：1=已测试，0=未测试，null=不显示（默认，相当于关闭该功能） */
+    isTested: integer("is_tested"),
+    publishedAt: integer("published_at", { mode: "timestamp" }),
+    pinnedAt: integer("pinned_at", { mode: "timestamp" }),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    index("published_at_idx").on(table.publishedAt, table.status),
+    index("created_at_idx").on(table.createdAt),
+    // 后台文章管理列表默认按 updated_at 倒序排序，无索引时全表排序（rows_read 高）
+    index("updated_at_idx").on(table.updatedAt),
+  ],
+);
+
+export const TagsTable = sqliteTable("tags", {
+  id,
+  name: text().notNull().unique(),
+  createdAt,
+});
+
+export const PostTagsTable = sqliteTable(
+  "post_tags",
+  {
+    postId: integer("post_id")
+      .notNull()
+      .references(() => PostsTable.id, { onDelete: "cascade" }),
+    tagId: integer("tag_id")
+      .notNull()
+      .references(() => TagsTable.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.postId, table.tagId] }),
+    index("post_tags_tag_idx").on(table.tagId),
+  ],
+);
+
+// ==================== relations ====================
+export const postsRelations = relations(PostsTable, ({ many }) => ({
+  postTags: many(PostTagsTable),
+}));
+
+export const tagsRelations = relations(TagsTable, ({ many }) => ({
+  postTags: many(PostTagsTable),
+}));
+
+export const postTagsRelations = relations(PostTagsTable, ({ one }) => ({
+  post: one(PostsTable, {
+    fields: [PostTagsTable.postId],
+    references: [PostsTable.id],
+  }),
+  tag: one(TagsTable, {
+    fields: [PostTagsTable.tagId],
+    references: [TagsTable.id],
+  }),
+}));
+
+// ==================== types ====================
+export type Tag = typeof TagsTable.$inferSelect;
+export type Post = typeof PostsTable.$inferSelect;
+export type PostStatus = (typeof POST_STATUSES)[number];
