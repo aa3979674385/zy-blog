@@ -5,9 +5,9 @@
  *
  * 工作流程：
  * 1. 模块级标记 `adminChecked` = true → 直接返回（同一 Worker 实例只查一次）
- * 2. 首次请求 → 用 `INSERT ... ON CONFLICT DO NOTHING` 原子插入管理员
- *    - 管理员不存在 → 创建 user + account（用 ADMIN_PASSWORD 生成 argon2 哈希）
- *    - 已存在 → 静默跳过，不碰密码
+ * 2. 首次请求 → 先检查数据库中是否已有 role="admin" 的管理员
+ *    - 已有管理员 → 静默跳过，什么都不做（不碰密码、不碰资料）
+ *    - 没有管理员 → 创建 user + account（用 ADMIN_PASSWORD 生成 argon2 哈希）
  * 3. 定时任务（每天凌晨 3 点）兜底检查一次
  *
  * 兜底机制：ADMIN_EMAIL / ADMIN_PASSWORD 未配置时自动使用默认值，
@@ -43,6 +43,18 @@ export async function ensureAdminUser(db: DB, env: Env): Promise<void> {
 
   const { ADMIN_EMAIL, ADMIN_PASSWORD } = serverEnv(env);
 
+  // ---- 先查：数据库中是否已有管理员（看 role，不看邮箱）----
+  const existingAdmin = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.role, "admin"))
+    .limit(1);
+
+  if (existingAdmin.length > 0) {
+    // 已有管理员 → 什么都不做，不碰密码、不碰资料
+    return;
+  }
+
   // 使用默认凭据时在控制台醒目告警，提醒尽快修改
   const usingDefaults =
     ADMIN_EMAIL === DEFAULT_ADMIN_EMAIL &&
@@ -54,9 +66,10 @@ export async function ensureAdminUser(db: DB, env: Env): Promise<void> {
     );
   }
 
-  // ---- 原子插入：email 冲突时静默跳过，杜绝并发竞态 ----
+  // ---- 没有管理员 → 创建 ----
   const userId = crypto.randomUUID();
   const now = new Date();
+
   await db
     .insert(user)
     .values({
@@ -70,42 +83,32 @@ export async function ensureAdminUser(db: DB, env: Env): Promise<void> {
     })
     .onConflictDoNothing({ target: user.email });
 
-  // ---- 查出实际用户 ID（可能是刚创建的，也可能是已存在的）----
-  const existing = await db
+  // 查出刚创建的用户 ID
+  const created = await db
     .select({ id: user.id })
     .from(user)
     .where(eq(user.email, ADMIN_EMAIL))
     .limit(1);
 
-  if (existing.length === 0) {
-    // 极端情况：插入失败且查不到，下次请求会重试（标记已在入口设为 true，
-    // 但定时任务会 reset 后重试）
-    console.error("[ADMIN INIT] Failed to create or find admin user.");
+  if (created.length === 0) {
+    console.error("[ADMIN INIT] Failed to create admin user.");
     return;
   }
 
-  const actualUserId = existing[0].id;
+  const actualUserId = created[0].id;
 
-  // ---- 检查 account 是否存在，不存在才创建（不碰已有密码）----
-  const existingAccount = await db
-    .select({ id: account.id })
-    .from(account)
-    .where(eq(account.userId, actualUserId))
-    .limit(1);
+  // 创建 account（密码）
+  const hasher = getPasswordHasher(env);
+  const hashedPw = await hasher.hash(ADMIN_PASSWORD);
+  await db.insert(account).values({
+    id: crypto.randomUUID(),
+    accountId: ADMIN_EMAIL,
+    providerId: "credential",
+    userId: actualUserId,
+    password: hashedPw,
+    createdAt: now,
+    updatedAt: now,
+  });
 
-  if (existingAccount.length === 0) {
-    const hasher = getPasswordHasher(env);
-    const hashedPw = await hasher.hash(ADMIN_PASSWORD);
-    await db.insert(account).values({
-      id: crypto.randomUUID(),
-      accountId: ADMIN_EMAIL,
-      providerId: "credential",
-      userId: actualUserId,
-      password: hashedPw,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-  // 管理员已存在且 account 已存在 → 不碰密码，不碰用户数据
-  // 管理员在后台修改的密码、权限、资料等全部保留
+  console.log(`[ADMIN INIT] Admin user created: ${ADMIN_EMAIL}`);
 }
