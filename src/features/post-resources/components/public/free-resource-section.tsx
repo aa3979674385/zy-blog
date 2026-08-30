@@ -288,17 +288,26 @@ function DownloadLinkItem({
 }) {
   const generateToken = useGenerateFreeToken();
   const [tokenUrl, setTokenUrl] = useState<string | null>(null);
+  const [tokenTime, setTokenTime] = useState(0); // token 获取时间戳
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const panStyle = getPanStyle(link.type);
 
+  // token 有效期 29 分钟（后端 30 分钟，留 1 分钟余量）
+  const TOKEN_TTL = 29 * 60 * 1000;
+
   // 生成二维码
   const handleGenerateQr = useCallback(async () => {
-    // 已有 token：切换显示（由父组件控制互斥）
-    if (tokenUrl) {
+    // 已有未过期 token：切换显示（由父组件控制互斥）
+    if (tokenUrl && Date.now() - tokenTime < TOKEN_TTL) {
       onToggle();
       return;
+    }
+
+    // token 已过期，清除旧缓存重新请求
+    if (tokenUrl) {
+      setTokenUrl(null);
     }
 
     try {
@@ -309,6 +318,7 @@ function DownloadLinkItem({
       });
       const fullUrl = `${window.location.origin}${result.downloadUrl}`;
       setTokenUrl(fullUrl);
+      setTokenTime(Date.now());
 
       if (isMobile) {
         // 手机端直接打开
@@ -320,7 +330,7 @@ function DownloadLinkItem({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "获取失败");
     }
-  }, [tokenUrl, generateToken, resourceId, link.idx, postId, isMobile, onToggle]);
+  }, [tokenUrl, tokenTime, generateToken, resourceId, link.idx, postId, isMobile, onToggle]);
 
   // 渲染二维码到 canvas
   useEffect(() => {
