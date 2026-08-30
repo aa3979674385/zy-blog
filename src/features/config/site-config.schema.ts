@@ -304,9 +304,11 @@ function createFloatingToolbarButtonSchema() {
   return z.object({
     id: z.string(),
     name: createSiteTextSchema(30),
-    type: z.enum(["qq", "qqmail", "qqgroup", "wechat", "link", "image"]),
+    type: z.enum(["qq", "qqmail", "qqgroup", "wechat", "link", "image", "html"]),
     icon: z.string().optional(),
+    iconName: z.string().optional(),
     value: z.string().optional(),
+    image: z.string().optional(),
     enabled: z.boolean().default(true),
     order: z.number().int().default(0),
   });
@@ -317,10 +319,12 @@ function createFloatingToolbarButtonInputSchema() {
     id: z.string().optional(),
     name: createSiteTextSchema(30).optional(),
     type: z
-      .enum(["qq", "qqmail", "qqgroup", "wechat", "link", "image"])
+      .enum(["qq", "qqmail", "qqgroup", "wechat", "link", "image", "html"])
       .optional(),
     icon: z.string().optional(),
+    iconName: z.string().optional(),
     value: z.string().optional(),
+    image: z.string().optional(),
     enabled: z.boolean().optional(),
     order: z.number().int().optional(),
   });
@@ -331,10 +335,12 @@ function createFloatingToolbarButtonInputFormSchema(messages: Messages) {
     id: z.string().optional(),
     name: createSiteTextFormSchema(30, messages).optional(),
     type: z
-      .enum(["qq", "qqmail", "qqgroup", "wechat", "link", "image"])
+      .enum(["qq", "qqmail", "qqgroup", "wechat", "link", "image", "html"])
       .optional(),
     icon: z.string().optional(),
+    iconName: z.string().optional(),
     value: z.string().optional(),
+    image: z.string().optional(),
     enabled: z.boolean().optional(),
     order: z.number().int().optional(),
   });

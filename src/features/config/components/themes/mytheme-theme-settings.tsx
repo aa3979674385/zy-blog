@@ -1,7 +1,8 @@
 import "@/features/theme/themes/mytheme/styles/preview.css";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Library, Plus, Trash2, X, icons } from "lucide-react";
 import { useState } from "react";
+import type { ComponentType } from "react";
 import { RewardSettingsPanel } from "./reward-settings-panel";
 import {
   type ArrayPath,
@@ -16,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { categoriesWithCountAdminQueryOptions } from "@/features/categories/queries";
 import { AssetUploadField } from "@/features/config/components/asset-upload-field";
+import { IconPicker } from "@/features/config/components/icon-picker";
 import {
   ColorField,
   Field,
@@ -551,9 +553,15 @@ const TOOLBAR_BUTTON_TYPES = [
   { value: "wechat", label: "微信" },
   { value: "link", label: "自定义链接" },
   { value: "image", label: "图片" },
+  { value: "html", label: "HTML文本" },
 ] as const;
 
 type ToolbarButtonType = (typeof TOOLBAR_BUTTON_TYPES)[number]["value"];
+
+type IconComponent = ComponentType<{
+  size?: number | string;
+  strokeWidth?: number | string;
+}>;
 
 function createToolbarButton(): {
   id: string;
@@ -561,6 +569,7 @@ function createToolbarButton(): {
   type: ToolbarButtonType;
   icon: string;
   value: string;
+  image: string;
   enabled: boolean;
   order: number;
 } {
@@ -573,6 +582,7 @@ function createToolbarButton(): {
     type: "qq",
     icon: "",
     value: "",
+    image: "",
     enabled: true,
     order: 0,
   };
@@ -600,6 +610,9 @@ export function MythemeOtherSettings() {
       shouldTouch: true,
       shouldValidate: true,
     });
+
+  // 图标库选择器：记录当前正在选图标的按钮下标（null 表示未打开）
+  const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
 
   return (
     <div className="space-y-6">
@@ -718,9 +731,15 @@ export function MythemeOtherSettings() {
             fields.map((f, index) => {
               const type = (watch(`${base}.buttons.${index}.type`) ??
                 "qq") as ToolbarButtonType;
-              const isImage = type === "wechat" || type === "image";
               const buttonEnabled =
                 watch(`${base}.buttons.${index}.enabled`) ?? true;
+              const iconName =
+                (watch(`${base}.buttons.${index}.iconName`) as
+                  | string
+                  | undefined) ?? "";
+              const IconComp = iconName
+                ? (icons as Record<string, IconComponent>)[iconName]
+                : undefined;
               return (
                 <div
                   key={f.id}
@@ -780,27 +799,62 @@ export function MythemeOtherSettings() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <AssetUploadField
-                      name={`${base}.buttons.${index}.icon`}
-                      assetPath="floating-toolbar"
-                      accept="image/*"
-                      label="图标（可选）"
-                      hint="留空则使用类型默认图标"
-                      placeholder="/images/asset/floating-toolbar"
-                    />
-                    {isImage ? (
+                    <div className="space-y-2">
                       <AssetUploadField
-                        name={`${base}.buttons.${index}.value`}
+                        name={`${base}.buttons.${index}.icon`}
                         assetPath="floating-toolbar"
                         accept="image/*"
-                        label="图片 / 二维码"
-                        hint="鼠标悬停按钮时展示该图"
+                        label="图标（可选）"
+                        hint="留空则使用类型默认图标"
                         placeholder="/images/asset/floating-toolbar"
                       />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIconPickerIndex(index)}
+                          className="flex items-center gap-1.5 rounded-lg border border-border/50 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-accent/10"
+                        >
+                          <Library size={14} />
+                          从图标库选择
+                        </button>
+                        {IconComp ? (
+                          <span className="flex items-center gap-1.5 rounded-lg bg-accent/10 px-2 py-1 text-xs text-muted-foreground">
+                            <IconComp size={14} />
+                            {iconName}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setValue(
+                                  `${base}.buttons.${index}.iconName` as FieldPath<SystemConfig>,
+                                  "",
+                                  { shouldDirty: true },
+                                )
+                              }
+                              className="text-muted-foreground/60 hover:text-foreground"
+                              aria-label="移除图标"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    {type === "html" ? (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-foreground">
+                          HTML 代码
+                        </p>
+                        <textarea
+                          {...register(`${base}.buttons.${index}.value`)}
+                          rows={4}
+                          placeholder={'输入 HTML 代码，如：<div style="color:#f00;font-weight:bold">自定义内容</div>'}
+                          className="w-full rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-sm text-foreground font-mono placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-(--fuwari-primary) resize-y"
+                        />
+                      </div>
                     ) : (
                       <div className="space-y-1.5">
                         <p className="text-xs font-medium text-foreground">
-                          值（QQ号 / 邮箱前缀 / 群链接 / 网址）
+                          文字（QQ号 / 邮箱前缀 / 群链接 / 网址）
                         </p>
                         <Input
                           {...register(`${base}.buttons.${index}.value`)}
@@ -811,13 +865,26 @@ export function MythemeOtherSettings() {
                                 ? "QQ号前缀，如 123456789"
                                 : type === "qqgroup"
                                   ? "QQ群加群链接"
-                                  : "https://example.com"
+                                  : type === "wechat" || type === "image"
+                                    ? "可选，悬停时展示的文字说明"
+                                    : "https://example.com"
                           }
                           className="h-10 rounded-lg"
                         />
                       </div>
                     )}
                   </div>
+
+                  {type === "html" ? null : (
+                    <AssetUploadField
+                      name={`${base}.buttons.${index}.image`}
+                      assetPath="floating-toolbar"
+                      accept="image/*"
+                      label="图片（可选，悬停展示）"
+                      hint="鼠标悬停按钮时展示；文字和图片都填则图片在上、文字在下"
+                      placeholder="/images/asset/floating-toolbar"
+                    />
+                  )}
 
                   <div className="space-y-1.5">
                     <p className="text-xs font-medium text-foreground">
@@ -855,6 +922,21 @@ export function MythemeOtherSettings() {
         </div>
         <PopupSettingsForm />
       </div>
+
+      {/* 图标库选择器 */}
+      {iconPickerIndex !== null ? (
+        <IconPicker
+          onSelect={(name) => {
+            setValue(
+              `site.theme.mytheme.floatingToolbar.buttons.${iconPickerIndex}.iconName` as FieldPath<SystemConfig>,
+              name,
+              { shouldDirty: true },
+            );
+            setIconPickerIndex(null);
+          }}
+          onClose={() => setIconPickerIndex(null)}
+        />
+      ) : null}
     </div>
   );
 }

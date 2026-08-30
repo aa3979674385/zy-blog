@@ -1,6 +1,7 @@
 import {
   ArrowUp,
   Check,
+  Code,
   Copy,
   ExternalLink,
   Image as ImageIcon,
@@ -11,8 +12,10 @@ import {
   Sun,
   Users,
   X,
+  icons,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ComponentType } from "react";
 import { useTheme } from "@/components/common/theme-provider";
 import type {
   MythemeFloatingToolbarButton,
@@ -22,6 +25,11 @@ import { cn } from "@/lib/utils";
 
 type ButtonType = MythemeFloatingToolbarButton["type"];
 
+type IconComponent = ComponentType<{
+  size?: number | string;
+  strokeWidth?: number | string;
+}>;
+
 const DEFAULT_ICON: Record<ButtonType, typeof Mail> = {
   qq: MessageCircle,
   qqmail: Mail,
@@ -29,6 +37,7 @@ const DEFAULT_ICON: Record<ButtonType, typeof Mail> = {
   wechat: MessageSquare,
   link: ExternalLink,
   image: ImageIcon,
+  html: Code,
 };
 
 function ButtonIcon({
@@ -36,6 +45,14 @@ function ButtonIcon({
 }: {
   button: MythemeFloatingToolbarButton;
 }) {
+  // 优先使用从图标库选择的图标（iconName）
+  if (button.iconName) {
+    const Icon = (icons as Record<string, IconComponent>)[button.iconName];
+    if (Icon) {
+      return <Icon size={22} strokeWidth={1.75} />;
+    }
+  }
+  // 其次使用上传的自定义图片图标
   if (button.icon && button.icon.trim()) {
     return (
       <img
@@ -48,30 +65,54 @@ function ButtonIcon({
       />
     );
   }
+  // 最后回退到类型默认图标
   const Icon = DEFAULT_ICON[button.type] ?? ExternalLink;
   return <Icon size={22} strokeWidth={1.75} />;
 }
 
 function getPopoverContent(button: MythemeFloatingToolbarButton) {
   const v = (button.value ?? "").trim();
+  const img = (button.image ?? "").trim();
+  // 图片：优先取 image 字段；兼容旧的 wechat/image 类型（图片曾存于 value）
+  const image =
+    img || (button.type === "wechat" || button.type === "image" ? v : "");
+
   switch (button.type) {
     case "qq":
-      return { title: `QQ：${v}`, desc: "点击按钮发起临时会话", copy: v };
+      return {
+        title: v ? `QQ：${v}` : "",
+        desc: v ? "点击按钮发起临时会话" : "",
+        copy: v,
+        image,
+      };
     case "qqmail":
       return {
-        title: `${v}@qq.com`,
-        desc: "点击按钮通过邮件客户端发送",
-        copy: `${v}@qq.com`,
+        title: v ? `${v}@qq.com` : "",
+        desc: v ? "点击按钮通过邮件客户端发送" : "",
+        copy: v ? `${v}@qq.com` : "",
+        image,
       };
     case "qqgroup":
-      return { title: "QQ群", desc: "点击按钮打开加群链接", copy: v };
+      return {
+        title: v ? "QQ群" : "",
+        desc: v ? "点击按钮打开加群链接" : "",
+        copy: v,
+        image,
+      };
     case "link":
-      return { title: v, desc: "点击按钮在新标签页打开", copy: v };
+      return {
+        title: v,
+        desc: v ? "点击按钮在新标签页打开" : "",
+        copy: v,
+        image,
+      };
     case "wechat":
     case "image":
-      return { title: button.name || "图片", desc: "鼠标移开即关闭", image: v };
+      return { title: v || button.name || "", desc: "", copy: "", image };
+    case "html":
+      return { title: "", desc: "", copy: "", image: "", html: v };
     default:
-      return { title: v, desc: "", copy: v };
+      return { title: v, desc: "", copy: v, image };
   }
 }
 
@@ -80,6 +121,7 @@ function handleButtonClick(
   openLightbox: (src: string) => void,
 ) {
   const v = (button.value ?? "").trim();
+  const img = (button.image ?? "").trim() || v;
   switch (button.type) {
     case "qq":
       if (v)
@@ -97,7 +139,7 @@ function handleButtonClick(
       break;
     case "wechat":
     case "image":
-      if (v) openLightbox(v);
+      if (img) openLightbox(img);
       break;
     default:
       break;
@@ -114,6 +156,18 @@ export function FloatingToolbar({
   const [hovered, setHovered] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 悬停卡片延迟关闭：鼠标从按钮移到卡片之间有空隙，留 250ms 缓冲，
+  // 避免卡片瞬间关闭导致「复制」按钮来不及点。
+  const handleHoverEnter = (id: string) => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setHovered(id);
+  };
+  const handleHoverLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHovered(null), 250);
+  };
 
   // 滚动出现模式：向下滚动一段距离后才显示
   useEffect(() => {
@@ -167,44 +221,57 @@ export function FloatingToolbar({
             <div
               key={b.id}
               className="relative"
-              onMouseEnter={() => setHovered(b.id)}
-              onMouseLeave={() => setHovered(null)}
+              onMouseEnter={() => handleHoverEnter(b.id)}
+              onMouseLeave={handleHoverLeave}
             >
               {/* 悬停弹出的卡片（位于按钮左侧） */}
               {hovered === b.id && (
-                <div className="absolute right-full top-1/2 mr-3 -translate-y-1/2 z-50 w-60 rounded-2xl border border-black/10 bg-white p-3 text-left shadow-xl dark:border-white/10 dark:bg-zinc-800">
-                  {"image" in content && content.image ? (
-                    <img
-                      src={content.image}
-                      alt={content.title}
-                      className="max-h-52 w-full rounded-lg object-contain"
-                    />
-                  ) : (
-                    <div className="space-y-1.5">
-                      <p className="break-all text-sm font-medium text-foreground">
-                        {content.title}
-                      </p>
-                      {content.desc ? (
-                        <p className="text-xs text-muted-foreground">
-                          {content.desc}
+                <div
+                  className="absolute right-full top-1/2 mr-3 -translate-y-1/2 z-50 w-60 rounded-2xl border border-black/10 bg-white p-3 text-left shadow-xl dark:border-white/10 dark:bg-zinc-800"
+                  onMouseEnter={() => handleHoverEnter(b.id)}
+                  onMouseLeave={handleHoverLeave}
+                >
+                  <div className="space-y-2">
+                    {content.image ? (
+                      <img
+                        src={content.image}
+                        alt={content.title || "图片"}
+                        className="max-h-52 w-full rounded-lg object-contain"
+                      />
+                    ) : null}
+                    {"html" in content && content.html ? (
+                      <div
+                        className="text-sm text-foreground [&_a]:text-(--fuwari-primary)"
+                        dangerouslySetInnerHTML={{ __html: content.html }}
+                      />
+                    ) : null}
+                    {content.title ? (
+                      <div className="space-y-1.5">
+                        <p className="break-all text-sm font-medium text-foreground">
+                          {content.title}
                         </p>
-                      ) : null}
-                      {"copy" in content && content.copy ? (
-                        <button
-                          type="button"
-                          onClick={() => copy(content.copy as string)}
-                          className="mt-1 flex items-center gap-1.5 text-xs text-(--fuwari-primary) hover:underline"
-                        >
-                          {copied ? (
-                            <Check size={13} />
-                          ) : (
-                            <Copy size={13} />
-                          )}
-                          {copied ? "已复制" : "复制"}
-                        </button>
-                      ) : null}
-                    </div>
-                  )}
+                        {content.desc ? (
+                          <p className="text-xs text-muted-foreground">
+                            {content.desc}
+                          </p>
+                        ) : null}
+                        {"copy" in content && content.copy ? (
+                          <button
+                            type="button"
+                            onClick={() => copy(content.copy as string)}
+                            className="mt-1 flex items-center gap-1.5 text-xs text-(--fuwari-primary) hover:underline"
+                          >
+                            {copied ? (
+                              <Check size={13} />
+                            ) : (
+                              <Copy size={13} />
+                            )}
+                            {copied ? "已复制" : "复制"}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               )}
 
