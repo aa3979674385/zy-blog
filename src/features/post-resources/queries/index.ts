@@ -25,6 +25,7 @@ import {
 } from "../api/post-resources.public.api";
 import {
   acquireFreeResourceFn,
+  generateFreeTokenFn,
   getFreeResourceStatusFn,
 } from "../api/free-resource.api";
 
@@ -228,13 +229,12 @@ export function useFreeResourceStatus(postId: number) {
   });
 }
 
-/** 免费获取一条网盘链接（扣减配额 + 生成中转 token） */
+/** 免费获取资源（扣减配额，返回链接元信息，不含真实URL） */
 export function useAcquireFreeResource(postId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: {
       resourceId: string;
-      linkIdx: number;
       postId: number;
     }) => acquireFreeResourceFn({ data: input }),
     onSuccess: () => {
@@ -243,5 +243,16 @@ export function useAcquireFreeResource(postId: number) {
         queryKey: ["freeResourceStatus", postId],
       });
     },
+  });
+}
+
+/** 按需为单条链接生成中转 token（不扣配额） */
+export function useGenerateFreeToken() {
+  return useMutation({
+    mutationFn: (input: {
+      resourceId: string;
+      linkIdx: number;
+      postId: number;
+    }) => generateFreeTokenFn({ data: input }),
   });
 }

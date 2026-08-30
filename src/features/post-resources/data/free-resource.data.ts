@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { resolveSystemConfig } from "@/features/config/service/config.service";
 import { getSystemConfig as getSystemConfigRaw } from "@/features/config/data/config.data";
 import { DEFAULT_CONFIG } from "@/features/config/config.schema";
@@ -173,6 +173,21 @@ export async function validateFreeToken(
     resource: r,
     link: links[row[0].linkIdx],
   };
+}
+
+/* ======================= 过期 Token 清理 ======================= */
+
+/**
+ * 删除所有已过期的免费获取 token。
+ * 由凌晨 3 点的 Cron 定时任务调用。
+ * 返回删除的行数。
+ */
+export async function deleteExpiredFreeTokens(db: DB): Promise<number> {
+  const now = Date.now();
+  const result = await db
+    .delete(freeResourceToken)
+    .where(lt(freeResourceToken.expiresAt, now));
+  return result.meta?.changes ?? 0;
 }
 
 /* ======================= 文章开关 ======================= */
