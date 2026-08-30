@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Gift, Loader2, X, Smartphone, QrCode as QrCodeIcon, Key, Copy, Check } from "lucide-react";
+import { Gift, Loader2, X, Smartphone, QrCode as QrCodeIcon, Key, Copy, Check, Download } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import QRCode from "qrcode";
@@ -297,9 +297,33 @@ function DownloadLinkItem({
   // token 有效期 29 分钟（后端 30 分钟，留 1 分钟余量）
   const TOKEN_TTL = 29 * 60 * 1000;
 
-  // 生成二维码
-  const handleGenerateQr = useCallback(async () => {
-    // 已有未过期 token：切换显示（由父组件控制互斥）
+  // 生成二维码 / 手机端直接下载
+  const handleClick = useCallback(async () => {
+    // 手机端：有缓存直接打开，没缓存就请求后打开
+    if (isMobile) {
+      if (tokenUrl && Date.now() - tokenTime < TOKEN_TTL) {
+        window.open(tokenUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      if (tokenUrl) setTokenUrl(null);
+      try {
+        const result = await generateToken.mutateAsync({
+          resourceId,
+          linkIdx: link.idx,
+          postId,
+        });
+        const fullUrl = `${window.location.origin}${result.downloadUrl}`;
+        setTokenUrl(fullUrl);
+        setTokenTime(Date.now());
+        window.open(fullUrl, "_blank", "noopener,noreferrer");
+        toast.success("已获取下载链接");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "获取失败");
+      }
+      return;
+    }
+
+    // 桌面端：已有未过期 token → 切换显示（由父组件控制互斥）
     if (tokenUrl && Date.now() - tokenTime < TOKEN_TTL) {
       onToggle();
       return;
@@ -319,14 +343,7 @@ function DownloadLinkItem({
       const fullUrl = `${window.location.origin}${result.downloadUrl}`;
       setTokenUrl(fullUrl);
       setTokenTime(Date.now());
-
-      if (isMobile) {
-        // 手机端直接打开
-        window.open(fullUrl, "_blank", "noopener,noreferrer");
-        toast.success("已获取下载链接");
-      } else {
-        onToggle();
-      }
+      onToggle();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "获取失败");
     }
@@ -374,17 +391,26 @@ function DownloadLinkItem({
         </span>
         <button
           type="button"
-          onClick={handleGenerateQr}
+          onClick={handleClick}
           disabled={generateToken.isPending}
-          className={`w-9 h-9 rounded-md flex items-center justify-center border transition-all flex-shrink-0 ${
-            isActive
-              ? "bg-violet-500 text-white border-violet-500"
-              : "bg-background text-muted-foreground border-border hover:bg-violet-500 hover:text-white hover:border-violet-500"
+          className={`rounded-md flex items-center justify-center border transition-all flex-shrink-0 ${
+            isMobile
+              ? "px-3 h-9 gap-1 text-xs font-medium bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600"
+              : `w-9 h-9 ${
+                  isActive
+                    ? "bg-violet-500 text-white border-violet-500"
+                    : "bg-background text-muted-foreground border-border hover:bg-violet-500 hover:text-white hover:border-violet-500"
+                }`
           }`}
-          aria-label="二维码"
+          aria-label={isMobile ? "下载" : "二维码"}
         >
           {generateToken.isPending ? (
             <Loader2 size={16} className="animate-spin" />
+          ) : isMobile ? (
+            <>
+              <Download size={14} />
+              <span>下载</span>
+            </>
           ) : (
             <QrCodeIcon size={16} />
           )}
@@ -405,7 +431,7 @@ function DownloadLinkItem({
         </div>
       )}
 
-      {/* 二维码展示区（展开时） */}
+      {/* 二维码展示区（仅桌面端展开时） */}
       {isActive && tokenUrl && !isMobile && (
         <div className="mt-3 pt-3 border-t border-dashed border-border/40 flex flex-col items-center">
           <div className="p-2 bg-white rounded-lg border border-border/30">
@@ -418,20 +444,6 @@ function DownloadLinkItem({
           <p className="text-[10px] text-amber-600 mt-1 text-center max-w-[200px]">
             请勿使用百度网盘等App扫码，需用浏览器扫码后跳转下载
           </p>
-        </div>
-      )}
-
-      {/* 手机端下载链接 */}
-      {tokenUrl && isMobile && (
-        <div className="mt-2">
-          <a
-            href={tokenUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full text-center text-sm font-medium py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-          >
-            点击下载
-          </a>
         </div>
       )}
     </div>
