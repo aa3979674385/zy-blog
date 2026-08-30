@@ -13,6 +13,7 @@ import {
 import { myPointsQuery } from "@/features/users/queries";
 import { usePointConfig } from "@/features/config/queries";
 import { RewardModule } from "./reward-module";
+import { FreeResourceSection } from "./free-resource-section";
 import { logResourceDownloadFn } from "@/features/post-resources/api/post-resources.public.api";
 import type { PublicResourceView } from "@/features/post-resources/api/post-resources.public.api";
 
@@ -205,6 +206,7 @@ export function SidebarDownloadBox({
             <SidebarResourceCard
               key={r.id}
               r={r}
+              postId={postId}
               isAuthed={isAuthed}
               balance={balance}
               pointName={pointName}
@@ -239,6 +241,7 @@ export function SidebarDownloadBox({
    ──────────────────────────────── */
 function SidebarResourceCard({
   r,
+  postId,
   isAuthed,
   balance,
   pointName,
@@ -251,6 +254,7 @@ function SidebarResourceCard({
   onExternalDownload,
 }: {
   r: PublicResourceView;
+  postId: number;
   isAuthed: boolean;
   balance: number;
   pointName: string;
@@ -451,6 +455,15 @@ function SidebarResourceCard({
               <p className="text-xs text-amber-600">积分不足，请先充值后再购买</p>
             )}
           </div>
+        )}
+
+        {/* ═══ 免费获取区域（仅当资源未解锁时显示） ═══ */}
+        {!access.accessible && (
+          <FreeResourceSection
+            postId={postId}
+            resource={r}
+            displayTitle={displayTitle ?? "下载资源"}
+          />
         )}
 
         {/* ═══ 4. 底部提示（该资源有解压码时显示） ═══ */}

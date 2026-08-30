@@ -5,6 +5,7 @@ export * from "./email-verification-codes.table";
 export * from "./categories.table";
 export * from "./comments.table";
 export * from "./config.table";
+export * from "./free-resource.table";
 export * from "./friend-links.table";
 export * from "./media.table";
 export * from "./membership.table";

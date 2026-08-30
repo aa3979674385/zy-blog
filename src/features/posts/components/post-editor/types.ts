@@ -15,6 +15,11 @@ export interface PostEditorData {
    * 与 DB is_tested 列（integer，可空）保持一致；UI 显示「已测试 / 未测试 / 不显示」。
    */
   isTested: number | null;
+  /**
+   * 免费资源获取开关：1=开启（默认），0=关闭。
+   * 受全局总开关控制：全局关闭时即使此处开启也不生效。
+   */
+  freeResourceEnabled: number;
   tagIds: Array<number>;
   categoryIds: Array<number>;
   /** 文章封面图（可选）。留空时由后端自动从正文第一张图抓取作为兜底。 */
@@ -40,6 +45,7 @@ export const defaultPostData: PostEditorData = {
   publishedAt: null,
   pinnedAt: null,
   isTested: null,
+  freeResourceEnabled: 1,
   tagIds: [],
   categoryIds: [],
   coverImage: null,

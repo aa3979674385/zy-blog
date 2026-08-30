@@ -23,6 +23,10 @@ import {
   listPublicPostResourcesFn,
   unlockPostResourceFn,
 } from "../api/post-resources.public.api";
+import {
+  acquireFreeResourceFn,
+  getFreeResourceStatusFn,
+} from "../api/free-resource.api";
 
 /* ======================= 后台管理 ======================= */
 
@@ -210,5 +214,34 @@ export function useClearResourceDownloads() {
   return useMutation({
     mutationFn: () => clearResourceDownloadsFn(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["resourceDownloads"] }),
+  });
+}
+
+/* ======================= 免费获取 ======================= */
+
+/** 查询文章的免费获取状态（全局开关 + 文章开关 + 今日配额） */
+export function useFreeResourceStatus(postId: number) {
+  return useQuery({
+    queryKey: ["freeResourceStatus", postId] as const,
+    queryFn: ({ signal }) =>
+      getFreeResourceStatusFn({ data: { postId }, signal }),
+  });
+}
+
+/** 免费获取一条网盘链接（扣减配额 + 生成中转 token） */
+export function useAcquireFreeResource(postId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      resourceId: string;
+      linkIdx: number;
+      postId: number;
+    }) => acquireFreeResourceFn({ data: input }),
+    onSuccess: () => {
+      // 刷新配额状态
+      qc.invalidateQueries({
+        queryKey: ["freeResourceStatus", postId],
+      });
+    },
   });
 }

@@ -138,6 +138,7 @@ function EditPost() {
     categoryIds: categories.map((c) => c.id),
     pinnedAt: post.pinnedAt,
     isTested: post.isTested ?? null,
+    freeResourceEnabled: post.freeResourceEnabled ?? 1,
     coverImage: post.coverImage ?? null,
     isSynced: post.isSynced,
     hasPublicCache: post.hasPublicCache,

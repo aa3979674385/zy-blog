@@ -24,6 +24,8 @@ export const PostSelectSchema = createSelectSchema(PostsTable, {
   // 亲自测试状态：迁移脚本执行前 DB 行可能暂无该列，select 结果为 undefined；
   // 用 nullable+optional 兜底，避免迁移未应用时详情/列表接口 parse 失败。
   isTested: z.number().int().nullable().optional(),
+  // 免费资源获取开关：迁移未执行前 DB 行可能无该列，用 nullable+optional 兜底
+  freeResourceEnabled: z.number().int().nullable().optional(),
 }).omit({
   publicContentJson: true,
 });

@@ -95,6 +95,13 @@ export function resolveSystemConfig(
       tipCode: config?.reward?.tipCode ?? DEFAULT_CONFIG.reward!.tipCode,
       payCode: config?.reward?.payCode ?? DEFAULT_CONFIG.reward!.payCode,
     },
+    freeResource: {
+      enabled:
+        config?.freeResource?.enabled ?? DEFAULT_CONFIG.freeResource!.enabled,
+      dailyLimit:
+        config?.freeResource?.dailyLimit ??
+        DEFAULT_CONFIG.freeResource!.dailyLimit,
+    },
   };
 }
 

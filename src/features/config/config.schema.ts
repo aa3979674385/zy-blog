@@ -69,6 +69,15 @@ export const SystemConfigSchema = z.object({
       memberDaily: z.number().int().min(0).default(0),
     })
     .optional(),
+  // 免费资源获取：全局总开关 + 每日免费获取次数（按自然日 0 点重置）
+  freeResource: z
+    .object({
+      /** 全局总开关：关闭后全站不显示「免费获取」按钮，即使文章级开关开启也不生效 */
+      enabled: z.boolean().default(true),
+      /** 每日免费获取次数（0=不限，但不建议） */
+      dailyLimit: z.number().int().min(0).default(3),
+    })
+    .optional(),
   // 前台导航菜单（后台可管理：首页 / 自定义链接 / 分类）
   navMenu: z.array(navMenuItemSchema).optional(),
   // 各类后台记录是否记录（关闭后对应记录不再写入，用于减少库表 clutter / 隐私）
@@ -209,6 +218,7 @@ export const DEFAULT_CONFIG: SystemConfig = {
   auth: { methods: "email", requireEmailVerification: false },
   points: { pointsName: "普通积分", creditsName: "会员积分", pointsPerYuan: 10, paymentEnabled: false },
   downloadLimit: { normalUserDaily: 0, memberDaily: 0 },
+  freeResource: { enabled: true, dailyLimit: 3 },
   navMenu: [DEFAULT_HOME_NAV_ITEM],
   records: {
     operationLog: true,

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Download, Loader2 } from "lucide-react";
+import { Coins, Download, Gift, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,11 @@ function PointsSettingsPage() {
   const [cardKeyUrl, setCardKeyUrl] = useState("");
   const [savingCardKey, setSavingCardKey] = useState(false);
 
+  // 免费资源获取（全局总开关 + 每日次数）
+  const [freeEnabled, setFreeEnabled] = useState(true);
+  const [freeDailyLimit, setFreeDailyLimit] = useState("3");
+  const [savingFree, setSavingFree] = useState(false);
+
   useEffect(() => {
     if (config) {
       setPointsName(config.pointsName);
@@ -53,6 +58,13 @@ function PointsSettingsPage() {
   useEffect(() => {
     if (sysConfig?.site) {
       setCardKeyUrl(sysConfig.site.cardKeyPurchaseUrl ?? "");
+    }
+  }, [sysConfig]);
+
+  useEffect(() => {
+    if (sysConfig?.freeResource) {
+      setFreeEnabled(sysConfig.freeResource.enabled ?? true);
+      setFreeDailyLimit(String(sysConfig.freeResource.dailyLimit ?? 3));
     }
   }, [sysConfig]);
 
@@ -147,6 +159,40 @@ function PointsSettingsPage() {
       toast.error("保存失败，请稍后重试");
     } finally {
       setSavingCardKey(false);
+    }
+  };
+
+  const parsedFreeLimit = Number(freeDailyLimit);
+  const freeLimitValid =
+    Number.isFinite(parsedFreeLimit) &&
+    parsedFreeLimit >= 0 &&
+    Number.isInteger(parsedFreeLimit);
+  const freeDirty =
+    !!sysConfig?.freeResource &&
+    freeLimitValid &&
+    (freeEnabled !== (sysConfig.freeResource.enabled ?? true) ||
+      parsedFreeLimit !== (sysConfig.freeResource.dailyLimit ?? 3));
+
+  const handleSaveFreeResource = async () => {
+    if (!freeLimitValid) {
+      toast.error("请输入非负整数");
+      return;
+    }
+    setSavingFree(true);
+    try {
+      await updateSystemConfigFn({
+        data: {
+          freeResource: {
+            enabled: freeEnabled,
+            dailyLimit: parsedFreeLimit,
+          },
+        },
+      });
+      toast.success("已保存");
+    } catch {
+      toast.error("保存失败，请稍后重试");
+    } finally {
+      setSavingFree(false);
     }
   };
 
@@ -312,6 +358,62 @@ function PointsSettingsPage() {
             className="h-11 px-8 rounded-none bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
           >
             {savingDl ? (
+              <Loader2 size={14} className="animate-spin mr-2" />
+            ) : null}
+            保存
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift size={16} className="opacity-60" />
+            免费资源获取
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            全局总开关：关闭后全站所有文章均不显示「免费获取」按钮，即使文章级开关已开启。
+            开启后，用户每日可免费获取指定次数的下载链接（PC 端显示二维码、手机端直接展示链接）。
+          </p>
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={freeEnabled}
+              onChange={(e) => setFreeEnabled(e.target.checked)}
+              className="h-4 w-4 accent-foreground"
+            />
+            <span className="text-sm font-medium">
+              启用免费资源获取（全局总开关）
+            </span>
+          </label>
+
+          <div className="space-y-2">
+            <label className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+              每日免费获取次数
+            </label>
+            <Input
+              type="number"
+              min={0}
+              step={1}
+              value={freeDailyLimit}
+              onChange={(e) => setFreeDailyLimit(e.target.value)}
+              placeholder="如：3"
+            />
+            <p className="text-xs text-muted-foreground">
+              每位登录用户每天可免费获取的次数，0 点重置。填 0 表示不限制。
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleSaveFreeResource}
+            disabled={!freeDirty || savingFree || !freeLimitValid}
+            className="h-11 px-8 rounded-none bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
+          >
+            {savingFree ? (
               <Loader2 size={14} className="animate-spin mr-2" />
             ) : null}
             保存

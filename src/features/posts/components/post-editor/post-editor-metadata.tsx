@@ -250,6 +250,32 @@ export function PostEditorMetadata({
             ))}
           </div>
         </div>
+
+        <div className="space-y-2">
+          <FieldLabel>免费资源获取</FieldLabel>
+          <div className="flex items-center gap-4">
+            {([1, 0] as const).map((val) => (
+              <button
+                key={String(val)}
+                type="button"
+                onClick={() => onPostChange({ freeResourceEnabled: val })}
+                className={`
+                  text-[10px] font-mono uppercase tracking-wider transition-colors
+                  ${
+                    post.freeResourceEnabled === val
+                      ? "border-b border-foreground font-bold text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                {val === 1 ? "开启" : "关闭"}
+              </button>
+            ))}
+          </div>
+          <p className="text-[9px] text-muted-foreground/60">
+            开启后用户可每日免费获取该文章的下载链接（需全局总开关也开启）
+          </p>
+        </div>
       </MetadataSection>
 
       {/* 模块 2：链接 · 分类 · 标签 */}

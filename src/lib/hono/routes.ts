@@ -22,6 +22,7 @@ import { serverEnv } from "@/lib/env/server.env";
 import type { Locale } from "@/lib/i18n";
 import { m } from "@/paraglide/messages";
 import resourceDownloadRedirectRoute from "@/features/post-resources/api/hono/redirect.route";
+import freeResourceDownloadRoute from "@/features/post-resources/api/hono/free-dl.route";
 import captchaConfigRoute from "./captcha-config.route";
 import { securityHeadersMiddleware } from "./security-headers";
 import { createRateLimiterIdentifier, getExecutionContext, getServiceContext } from "./helper";
@@ -254,6 +255,9 @@ app.post(
 
 // 下载中转：外链（网盘等）点击后由后台校验权限并 302 跳真实地址，真实链接不进前端
 app.route("/dl", resourceDownloadRedirectRoute);
+
+// 免费获取中转：通过 token 校验后 302 跳真实地址，PC 端生成二维码、手机端直接点击
+app.route("/api/free-dl", freeResourceDownloadRoute);
 
 // Router之前的防护
 app.all("*", shieldMiddleware);

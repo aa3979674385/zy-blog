@@ -113,6 +113,7 @@ export async function insertPost(db: DB, data: typeof PostsTable.$inferInsert) {
     createdAt: PostsTable.createdAt,
     updatedAt: PostsTable.updatedAt,
     isTested: PostsTable.isTested,
+    freeResourceEnabled: PostsTable.freeResourceEnabled,
   });
 
   let query;
@@ -339,6 +340,7 @@ export async function getPostsCursor(
       updatedAt: PostsTable.updatedAt,
       coverImage: PostsTable.coverImage,
       isTested: PostsTable.isTested,
+    freeResourceEnabled: PostsTable.freeResourceEnabled,
     })
     .from(PostsTable)
     .$dynamic();
@@ -533,6 +535,7 @@ export async function getPostsPaged(
       updatedAt: PostsTable.updatedAt,
       coverImage: PostsTable.coverImage,
       isTested: PostsTable.isTested,
+    freeResourceEnabled: PostsTable.freeResourceEnabled,
     })
     .from(PostsTable)
     .$dynamic();
@@ -1076,6 +1079,7 @@ export async function getPublicPostsByIds(db: DB, ids: Array<number>) {
       updatedAt: PostsTable.updatedAt,
       coverImage: PostsTable.coverImage,
       isTested: PostsTable.isTested,
+    freeResourceEnabled: PostsTable.freeResourceEnabled,
     })
     .from(PostsTable)
     .where(and(inArray(PostsTable.id, ids), whereClause));

@@ -29,6 +29,8 @@ export const PostsTable = sqliteTable(
     status: text("status", { enum: POST_STATUSES }).notNull().default("draft"),
     /** 亲自测试状态：1=已测试，0=未测试，null=不显示（默认，相当于关闭该功能） */
     isTested: integer("is_tested"),
+    /** 免费资源获取开关：1=开启（默认），0=关闭。历史文章无此字段时应用层默认视为 1。 */
+    freeResourceEnabled: integer("free_resource_enabled").default(1),
     publishedAt: integer("published_at", { mode: "timestamp" }),
     pinnedAt: integer("pinned_at", { mode: "timestamp" }),
     createdAt,

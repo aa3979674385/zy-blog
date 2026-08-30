@@ -9,52 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as BannedRouteImport } from './routes/banned'
-import { Route as AdminRouteRouteImport } from './routes/admin/route'
-import { Route as UserRouteRouteImport } from './routes/_user/route'
-import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as PublicIndexRouteImport } from './routes/_public/index'
-import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
-import { Route as UserSubmitFriendLinkRouteImport } from './routes/_user/submit-friend-link'
-import { Route as UserProfileRouteImport } from './routes/_user/profile'
-import { Route as UserMembershipRouteImport } from './routes/_user/membership'
-import { Route as PublicUnsubscribeRouteImport } from './routes/_public/unsubscribe'
-import { Route as PublicSearchRouteImport } from './routes/_public/search'
-import { Route as PublicPostsRouteImport } from './routes/_public/posts'
-import { Route as PublicFriendLinksRouteImport } from './routes/_public/friend-links'
-import { Route as AuthVerifyEmailRouteImport } from './routes/_auth/verify-email'
-import { Route as AuthResetLinkRouteImport } from './routes/_auth/reset-link'
-import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
-import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as PublicRouteRouteImport } from './routes/_public/route'
+import { Route as UserRouteRouteImport } from './routes/_user/route'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as BannedRouteImport } from './routes/banned'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
+import { Route as AuthResetLinkRouteImport } from './routes/_auth/reset-link'
+import { Route as AuthVerifyEmailRouteImport } from './routes/_auth/verify-email'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicFriendLinksRouteImport } from './routes/_public/friend-links'
+import { Route as PublicPostsRouteImport } from './routes/_public/posts'
+import { Route as PublicSearchRouteImport } from './routes/_public/search'
+import { Route as PublicUnsubscribeRouteImport } from './routes/_public/unsubscribe'
+import { Route as UserMembershipRouteImport } from './routes/_user/membership'
+import { Route as UserProfileRouteImport } from './routes/_user/profile'
+import { Route as UserSubmitFriendLinkRouteImport } from './routes/_user/submit-friend-link'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminPostsRouteRouteImport } from './routes/admin/posts/route'
-import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
-import { Route as AdminTemplateSettingsIndexRouteImport } from './routes/admin/template-settings/index'
-import { Route as AdminTagsIndexRouteImport } from './routes/admin/tags/index'
-import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
-import { Route as AdminPurchaseOrdersIndexRouteImport } from './routes/admin/purchase-orders/index'
-import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
-import { Route as AdminPopupIndexRouteImport } from './routes/admin/popup/index'
-import { Route as AdminPointsSettingsIndexRouteImport } from './routes/admin/points-settings/index'
-import { Route as AdminPointsLogIndexRouteImport } from './routes/admin/points-log/index'
-import { Route as AdminNavMenuIndexRouteImport } from './routes/admin/nav-menu/index'
-import { Route as AdminMembershipIndexRouteImport } from './routes/admin/membership/index'
-import { Route as AdminMediaIndexRouteImport } from './routes/admin/media/index'
-import { Route as AdminLogsIndexRouteImport } from './routes/admin/logs/index'
-import { Route as AdminFriendLinksIndexRouteImport } from './routes/admin/friend-links/index'
-import { Route as AdminDownloadLogsIndexRouteImport } from './routes/admin/download-logs/index'
-import { Route as AdminCommentsIndexRouteImport } from './routes/admin/comments/index'
-import { Route as AdminCategoriesIndexRouteImport } from './routes/admin/categories/index'
-import { Route as AdminCardKeysIndexRouteImport } from './routes/admin/card-keys/index'
-import { Route as AdminUsersIdRouteImport } from './routes/admin/users/$id'
+import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as PublicPostSlugRouteImport } from './routes/_public/post/$slug'
+import { Route as AdminCardKeysIndexRouteImport } from './routes/admin/card-keys/index'
+import { Route as AdminCategoriesIndexRouteImport } from './routes/admin/categories/index'
+import { Route as AdminCommentsIndexRouteImport } from './routes/admin/comments/index'
+import { Route as AdminDownloadLogsIndexRouteImport } from './routes/admin/download-logs/index'
+import { Route as AdminFriendLinksIndexRouteImport } from './routes/admin/friend-links/index'
+import { Route as AdminLogsIndexRouteImport } from './routes/admin/logs/index'
+import { Route as AdminMediaIndexRouteImport } from './routes/admin/media/index'
+import { Route as AdminMembershipIndexRouteImport } from './routes/admin/membership/index'
+import { Route as AdminNavMenuIndexRouteImport } from './routes/admin/nav-menu/index'
+import { Route as AdminPointsLogIndexRouteImport } from './routes/admin/points-log/index'
+import { Route as AdminPointsSettingsIndexRouteImport } from './routes/admin/points-settings/index'
+import { Route as AdminPopupIndexRouteImport } from './routes/admin/popup/index'
+import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
+import { Route as AdminPurchaseOrdersIndexRouteImport } from './routes/admin/purchase-orders/index'
+import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
+import { Route as AdminTagsIndexRouteImport } from './routes/admin/tags/index'
+import { Route as AdminTemplateSettingsIndexRouteImport } from './routes/admin/template-settings/index'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AdminUsersIdRouteImport } from './routes/admin/users/$id'
 import { Route as AdminPostsEditIdRouteImport } from './routes/admin/posts/edit.$id'
 
-const BannedRoute = BannedRouteImport.update({
-  id: '/banned',
-  path: '/banned',
+const AuthRouteRoute = AuthRouteRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicRouteRoute = PublicRouteRouteImport.update({
+  id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UserRouteRoute = UserRouteRouteImport.update({
+  id: '/_user',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -62,81 +69,14 @@ const AdminRouteRoute = AdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UserRouteRoute = UserRouteRouteImport.update({
-  id: '/_user',
+const BannedRoute = BannedRouteImport.update({
+  id: '/banned',
+  path: '/banned',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicRouteRoute = PublicRouteRouteImport.update({
-  id: '/_public',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRouteRoute = AuthRouteRouteImport.update({
-  id: '/_auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const PublicIndexRoute = PublicIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const OauthConsentRoute = OauthConsentRouteImport.update({
-  id: '/oauth/consent',
-  path: '/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UserSubmitFriendLinkRoute = UserSubmitFriendLinkRouteImport.update({
-  id: '/submit-friend-link',
-  path: '/submit-friend-link',
-  getParentRoute: () => UserRouteRoute,
-} as any)
-const UserProfileRoute = UserProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => UserRouteRoute,
-} as any)
-const UserMembershipRoute = UserMembershipRouteImport.update({
-  id: '/membership',
-  path: '/membership',
-  getParentRoute: () => UserRouteRoute,
-} as any)
-const PublicUnsubscribeRoute = PublicUnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicSearchRoute = PublicSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicPostsRoute = PublicPostsRouteImport.update({
-  id: '/posts',
-  path: '/posts',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicFriendLinksRoute = PublicFriendLinksRouteImport.update({
-  id: '/friend-links',
-  path: '/friend-links',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthResetLinkRoute = AuthResetLinkRouteImport.update({
-  id: '/reset-link',
-  path: '/reset-link',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthRegisterRoute = AuthRegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
@@ -144,113 +84,75 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthResetLinkRoute = AuthResetLinkRouteImport.update({
+  id: '/reset-link',
+  path: '/reset-link',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const PublicIndexRoute = PublicIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicFriendLinksRoute = PublicFriendLinksRouteImport.update({
+  id: '/friend-links',
+  path: '/friend-links',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicPostsRoute = PublicPostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicSearchRoute = PublicSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicUnsubscribeRoute = PublicUnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const UserMembershipRoute = UserMembershipRouteImport.update({
+  id: '/membership',
+  path: '/membership',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const UserProfileRoute = UserProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const UserSubmitFriendLinkRoute = UserSubmitFriendLinkRouteImport.update({
+  id: '/submit-friend-link',
+  path: '/submit-friend-link',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminPostsRouteRoute = AdminPostsRouteRouteImport.update({
   id: '/posts',
   path: '/posts',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminTemplateSettingsIndexRoute =
-  AdminTemplateSettingsIndexRouteImport.update({
-    id: '/template-settings/',
-    path: '/template-settings/',
-    getParentRoute: () => AdminRouteRoute,
-  } as any)
-const AdminTagsIndexRoute = AdminTagsIndexRouteImport.update({
-  id: '/tags/',
-  path: '/tags/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminPurchaseOrdersIndexRoute =
-  AdminPurchaseOrdersIndexRouteImport.update({
-    id: '/purchase-orders/',
-    path: '/purchase-orders/',
-    getParentRoute: () => AdminRouteRoute,
-  } as any)
-const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminPostsRouteRoute,
-} as any)
-const AdminPopupIndexRoute = AdminPopupIndexRouteImport.update({
-  id: '/popup/',
-  path: '/popup/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminPointsSettingsIndexRoute =
-  AdminPointsSettingsIndexRouteImport.update({
-    id: '/points-settings/',
-    path: '/points-settings/',
-    getParentRoute: () => AdminRouteRoute,
-  } as any)
-const AdminPointsLogIndexRoute = AdminPointsLogIndexRouteImport.update({
-  id: '/points-log/',
-  path: '/points-log/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminNavMenuIndexRoute = AdminNavMenuIndexRouteImport.update({
-  id: '/nav-menu/',
-  path: '/nav-menu/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminMembershipIndexRoute = AdminMembershipIndexRouteImport.update({
-  id: '/membership/',
-  path: '/membership/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminMediaIndexRoute = AdminMediaIndexRouteImport.update({
-  id: '/media/',
-  path: '/media/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminLogsIndexRoute = AdminLogsIndexRouteImport.update({
-  id: '/logs/',
-  path: '/logs/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminFriendLinksIndexRoute = AdminFriendLinksIndexRouteImport.update({
-  id: '/friend-links/',
-  path: '/friend-links/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminDownloadLogsIndexRoute = AdminDownloadLogsIndexRouteImport.update({
-  id: '/download-logs/',
-  path: '/download-logs/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminCommentsIndexRoute = AdminCommentsIndexRouteImport.update({
-  id: '/comments/',
-  path: '/comments/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminCategoriesIndexRoute = AdminCategoriesIndexRouteImport.update({
-  id: '/categories/',
-  path: '/categories/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminCardKeysIndexRoute = AdminCardKeysIndexRouteImport.update({
-  id: '/card-keys/',
-  path: '/card-keys/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminUsersIdRoute = AdminUsersIdRouteImport.update({
-  id: '/users/$id',
-  path: '/users/$id',
-  getParentRoute: () => AdminRouteRoute,
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PublicPostSlugRoute = PublicPostSlugRouteImport.update({
   id: '/post/$slug',
@@ -259,6 +161,104 @@ const PublicPostSlugRoute = PublicPostSlugRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_public/post/$slug.lazy').then((d) => d.Route),
 )
+const AdminCardKeysIndexRoute = AdminCardKeysIndexRouteImport.update({
+  id: '/card-keys/',
+  path: '/card-keys/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCategoriesIndexRoute = AdminCategoriesIndexRouteImport.update({
+  id: '/categories/',
+  path: '/categories/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCommentsIndexRoute = AdminCommentsIndexRouteImport.update({
+  id: '/comments/',
+  path: '/comments/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDownloadLogsIndexRoute = AdminDownloadLogsIndexRouteImport.update({
+  id: '/download-logs/',
+  path: '/download-logs/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminFriendLinksIndexRoute = AdminFriendLinksIndexRouteImport.update({
+  id: '/friend-links/',
+  path: '/friend-links/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLogsIndexRoute = AdminLogsIndexRouteImport.update({
+  id: '/logs/',
+  path: '/logs/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminMediaIndexRoute = AdminMediaIndexRouteImport.update({
+  id: '/media/',
+  path: '/media/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminMembershipIndexRoute = AdminMembershipIndexRouteImport.update({
+  id: '/membership/',
+  path: '/membership/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminNavMenuIndexRoute = AdminNavMenuIndexRouteImport.update({
+  id: '/nav-menu/',
+  path: '/nav-menu/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPointsLogIndexRoute = AdminPointsLogIndexRouteImport.update({
+  id: '/points-log/',
+  path: '/points-log/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPointsSettingsIndexRoute =
+  AdminPointsSettingsIndexRouteImport.update({
+    id: '/points-settings/',
+    path: '/points-settings/',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminPopupIndexRoute = AdminPopupIndexRouteImport.update({
+  id: '/popup/',
+  path: '/popup/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminPostsRouteRoute,
+} as any)
+const AdminPurchaseOrdersIndexRoute =
+  AdminPurchaseOrdersIndexRouteImport.update({
+    id: '/purchase-orders/',
+    path: '/purchase-orders/',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTagsIndexRoute = AdminTagsIndexRouteImport.update({
+  id: '/tags/',
+  path: '/tags/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTemplateSettingsIndexRoute =
+  AdminTemplateSettingsIndexRouteImport.update({
+    id: '/template-settings/',
+    path: '/template-settings/',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUsersIdRoute = AdminUsersIdRouteImport.update({
+  id: '/users/$id',
+  path: '/users/$id',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminPostsEditIdRoute = AdminPostsEditIdRouteImport.update({
   id: '/edit/$id',
   path: '/edit/$id',
@@ -528,25 +528,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/banned': {
-      id: '/banned'
-      path: '/banned'
-      fullPath: '/banned'
-      preLoaderRoute: typeof BannedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_user': {
-      id: '/_user'
+    '/_auth': {
+      id: '/_auth'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof UserRouteRouteImport
+      preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public': {
@@ -556,102 +542,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth': {
-      id: '/_auth'
+    '/_user': {
+      id: '/_user'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AuthRouteRouteImport
+      preLoaderRoute: typeof UserRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/_public/': {
-      id: '/_public/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof PublicIndexRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/oauth/consent': {
-      id: '/oauth/consent'
-      path: '/oauth/consent'
-      fullPath: '/oauth/consent'
-      preLoaderRoute: typeof OauthConsentRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_user/submit-friend-link': {
-      id: '/_user/submit-friend-link'
-      path: '/submit-friend-link'
-      fullPath: '/submit-friend-link'
-      preLoaderRoute: typeof UserSubmitFriendLinkRouteImport
-      parentRoute: typeof UserRouteRoute
+    '/banned': {
+      id: '/banned'
+      path: '/banned'
+      fullPath: '/banned'
+      preLoaderRoute: typeof BannedRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_user/profile': {
-      id: '/_user/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof UserProfileRouteImport
-      parentRoute: typeof UserRouteRoute
-    }
-    '/_user/membership': {
-      id: '/_user/membership'
-      path: '/membership'
-      fullPath: '/membership'
-      preLoaderRoute: typeof UserMembershipRouteImport
-      parentRoute: typeof UserRouteRoute
-    }
-    '/_public/unsubscribe': {
-      id: '/_public/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof PublicUnsubscribeRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/search': {
-      id: '/_public/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof PublicSearchRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/posts': {
-      id: '/_public/posts'
-      path: '/posts'
-      fullPath: '/posts'
-      preLoaderRoute: typeof PublicPostsRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/friend-links': {
-      id: '/_public/friend-links'
-      path: '/friend-links'
-      fullPath: '/friend-links'
-      preLoaderRoute: typeof PublicFriendLinksRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_auth/verify-email': {
-      id: '/_auth/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof AuthVerifyEmailRouteImport
-      parentRoute: typeof AuthRouteRoute
-    }
-    '/_auth/reset-link': {
-      id: '/_auth/reset-link'
-      path: '/reset-link'
-      fullPath: '/reset-link'
-      preLoaderRoute: typeof AuthResetLinkRouteImport
-      parentRoute: typeof AuthRouteRoute
-    }
-    '/_auth/register': {
-      id: '/_auth/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof AuthRegisterRouteImport
+    '/_auth/forgot-password': {
+      id: '/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/login': {
@@ -661,12 +577,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/forgot-password': {
-      id: '/_auth/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+    '/_auth/register': {
+      id: '/_auth/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
       parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/reset-link': {
+      id: '/_auth/reset-link'
+      path: '/reset-link'
+      fullPath: '/reset-link'
+      preLoaderRoute: typeof AuthResetLinkRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/verify-email': {
+      id: '/_auth/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof AuthVerifyEmailRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_public/': {
+      id: '/_public/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/friend-links': {
+      id: '/_public/friend-links'
+      path: '/friend-links'
+      fullPath: '/friend-links'
+      preLoaderRoute: typeof PublicFriendLinksRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/posts': {
+      id: '/_public/posts'
+      path: '/posts'
+      fullPath: '/posts'
+      preLoaderRoute: typeof PublicPostsRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/search': {
+      id: '/_public/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof PublicSearchRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/unsubscribe': {
+      id: '/_public/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof PublicUnsubscribeRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_user/membership': {
+      id: '/_user/membership'
+      path: '/membership'
+      fullPath: '/membership'
+      preLoaderRoute: typeof UserMembershipRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/_user/profile': {
+      id: '/_user/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof UserProfileRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/_user/submit-friend-link': {
+      id: '/_user/submit-friend-link'
+      path: '/submit-friend-link'
+      fullPath: '/submit-friend-link'
+      preLoaderRoute: typeof UserSubmitFriendLinkRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/admin/posts': {
       id: '/admin/posts'
@@ -675,116 +668,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPostsRouteRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/users/': {
-      id: '/admin/users/'
-      path: '/users'
-      fullPath: '/admin/users/'
-      preLoaderRoute: typeof AdminUsersIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/template-settings/': {
-      id: '/admin/template-settings/'
-      path: '/template-settings'
-      fullPath: '/admin/template-settings/'
-      preLoaderRoute: typeof AdminTemplateSettingsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
+    '/_public/post/$slug': {
+      id: '/_public/post/$slug'
+      path: '/post/$slug'
+      fullPath: '/post/$slug'
+      preLoaderRoute: typeof PublicPostSlugRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/admin/tags/': {
-      id: '/admin/tags/'
-      path: '/tags'
-      fullPath: '/admin/tags/'
-      preLoaderRoute: typeof AdminTagsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/settings/': {
-      id: '/admin/settings/'
-      path: '/settings'
-      fullPath: '/admin/settings/'
-      preLoaderRoute: typeof AdminSettingsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/purchase-orders/': {
-      id: '/admin/purchase-orders/'
-      path: '/purchase-orders'
-      fullPath: '/admin/purchase-orders/'
-      preLoaderRoute: typeof AdminPurchaseOrdersIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/posts/': {
-      id: '/admin/posts/'
-      path: '/'
-      fullPath: '/admin/posts/'
-      preLoaderRoute: typeof AdminPostsIndexRouteImport
-      parentRoute: typeof AdminPostsRouteRoute
-    }
-    '/admin/popup/': {
-      id: '/admin/popup/'
-      path: '/popup'
-      fullPath: '/admin/popup/'
-      preLoaderRoute: typeof AdminPopupIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/points-settings/': {
-      id: '/admin/points-settings/'
-      path: '/points-settings'
-      fullPath: '/admin/points-settings/'
-      preLoaderRoute: typeof AdminPointsSettingsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/points-log/': {
-      id: '/admin/points-log/'
-      path: '/points-log'
-      fullPath: '/admin/points-log/'
-      preLoaderRoute: typeof AdminPointsLogIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/nav-menu/': {
-      id: '/admin/nav-menu/'
-      path: '/nav-menu'
-      fullPath: '/admin/nav-menu/'
-      preLoaderRoute: typeof AdminNavMenuIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/membership/': {
-      id: '/admin/membership/'
-      path: '/membership'
-      fullPath: '/admin/membership/'
-      preLoaderRoute: typeof AdminMembershipIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/media/': {
-      id: '/admin/media/'
-      path: '/media'
-      fullPath: '/admin/media/'
-      preLoaderRoute: typeof AdminMediaIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/logs/': {
-      id: '/admin/logs/'
-      path: '/logs'
-      fullPath: '/admin/logs/'
-      preLoaderRoute: typeof AdminLogsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/friend-links/': {
-      id: '/admin/friend-links/'
-      path: '/friend-links'
-      fullPath: '/admin/friend-links/'
-      preLoaderRoute: typeof AdminFriendLinksIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/download-logs/': {
-      id: '/admin/download-logs/'
-      path: '/download-logs'
-      fullPath: '/admin/download-logs/'
-      preLoaderRoute: typeof AdminDownloadLogsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/comments/': {
-      id: '/admin/comments/'
-      path: '/comments'
-      fullPath: '/admin/comments/'
-      preLoaderRoute: typeof AdminCommentsIndexRouteImport
+    '/admin/card-keys/': {
+      id: '/admin/card-keys/'
+      path: '/card-keys'
+      fullPath: '/admin/card-keys/'
+      preLoaderRoute: typeof AdminCardKeysIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/categories/': {
@@ -794,11 +696,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/card-keys/': {
-      id: '/admin/card-keys/'
-      path: '/card-keys'
-      fullPath: '/admin/card-keys/'
-      preLoaderRoute: typeof AdminCardKeysIndexRouteImport
+    '/admin/comments/': {
+      id: '/admin/comments/'
+      path: '/comments'
+      fullPath: '/admin/comments/'
+      preLoaderRoute: typeof AdminCommentsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/download-logs/': {
+      id: '/admin/download-logs/'
+      path: '/download-logs'
+      fullPath: '/admin/download-logs/'
+      preLoaderRoute: typeof AdminDownloadLogsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/friend-links/': {
+      id: '/admin/friend-links/'
+      path: '/friend-links'
+      fullPath: '/admin/friend-links/'
+      preLoaderRoute: typeof AdminFriendLinksIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/logs/': {
+      id: '/admin/logs/'
+      path: '/logs'
+      fullPath: '/admin/logs/'
+      preLoaderRoute: typeof AdminLogsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/media/': {
+      id: '/admin/media/'
+      path: '/media'
+      fullPath: '/admin/media/'
+      preLoaderRoute: typeof AdminMediaIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/membership/': {
+      id: '/admin/membership/'
+      path: '/membership'
+      fullPath: '/admin/membership/'
+      preLoaderRoute: typeof AdminMembershipIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/nav-menu/': {
+      id: '/admin/nav-menu/'
+      path: '/nav-menu'
+      fullPath: '/admin/nav-menu/'
+      preLoaderRoute: typeof AdminNavMenuIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/points-log/': {
+      id: '/admin/points-log/'
+      path: '/points-log'
+      fullPath: '/admin/points-log/'
+      preLoaderRoute: typeof AdminPointsLogIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/points-settings/': {
+      id: '/admin/points-settings/'
+      path: '/points-settings'
+      fullPath: '/admin/points-settings/'
+      preLoaderRoute: typeof AdminPointsSettingsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/popup/': {
+      id: '/admin/popup/'
+      path: '/popup'
+      fullPath: '/admin/popup/'
+      preLoaderRoute: typeof AdminPopupIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/posts/': {
+      id: '/admin/posts/'
+      path: '/'
+      fullPath: '/admin/posts/'
+      preLoaderRoute: typeof AdminPostsIndexRouteImport
+      parentRoute: typeof AdminPostsRouteRoute
+    }
+    '/admin/purchase-orders/': {
+      id: '/admin/purchase-orders/'
+      path: '/purchase-orders'
+      fullPath: '/admin/purchase-orders/'
+      preLoaderRoute: typeof AdminPurchaseOrdersIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/settings/': {
+      id: '/admin/settings/'
+      path: '/settings'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/tags/': {
+      id: '/admin/tags/'
+      path: '/tags'
+      fullPath: '/admin/tags/'
+      preLoaderRoute: typeof AdminTagsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/template-settings/': {
+      id: '/admin/template-settings/'
+      path: '/template-settings'
+      fullPath: '/admin/template-settings/'
+      preLoaderRoute: typeof AdminTemplateSettingsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/users/$id': {
@@ -807,13 +814,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/users/$id'
       preLoaderRoute: typeof AdminUsersIdRouteImport
       parentRoute: typeof AdminRouteRoute
-    }
-    '/_public/post/$slug': {
-      id: '/_public/post/$slug'
-      path: '/post/$slug'
-      fullPath: '/post/$slug'
-      preLoaderRoute: typeof PublicPostSlugRouteImport
-      parentRoute: typeof PublicRouteRoute
     }
     '/admin/posts/edit/$id': {
       id: '/admin/posts/edit/$id'
