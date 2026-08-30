@@ -193,6 +193,9 @@ function DownloadDialog({
   isMobile: boolean;
   onClose: () => void;
 }) {
+  // 当前展开二维码的链接 idx，同时只展开一个
+  const [activeQrIdx, setActiveQrIdx] = useState<number | null>(null);
+
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
@@ -228,6 +231,12 @@ function DownloadDialog({
               resourceId={data.resourceId}
               postId={postId}
               isMobile={isMobile}
+              isActive={activeQrIdx === link.idx}
+              onToggle={() =>
+                setActiveQrIdx((cur) =>
+                  cur === link.idx ? null : link.idx,
+                )
+              }
             />
           ))}
 
@@ -267,15 +276,18 @@ function DownloadLinkItem({
   resourceId,
   postId,
   isMobile,
+  isActive,
+  onToggle,
 }: {
   link: { idx: number; type: string; password: string | null };
   resourceId: string;
   postId: number;
   isMobile: boolean;
+  isActive: boolean;
+  onToggle: () => void;
 }) {
   const generateToken = useGenerateFreeToken();
   const [tokenUrl, setTokenUrl] = useState<string | null>(null);
-  const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -283,9 +295,9 @@ function DownloadLinkItem({
 
   // 生成二维码
   const handleGenerateQr = useCallback(async () => {
-    // 已有 token：切换显示
+    // 已有 token：切换显示（由父组件控制互斥）
     if (tokenUrl) {
-      setShowQr((v) => !v);
+      onToggle();
       return;
     }
 
@@ -303,16 +315,16 @@ function DownloadLinkItem({
         window.open(fullUrl, "_blank", "noopener,noreferrer");
         toast.success("已获取下载链接");
       } else {
-        setShowQr(true);
+        onToggle();
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "获取失败");
     }
-  }, [tokenUrl, generateToken, resourceId, link.idx, postId, isMobile]);
+  }, [tokenUrl, generateToken, resourceId, link.idx, postId, isMobile, onToggle]);
 
   // 渲染二维码到 canvas
   useEffect(() => {
-    if (!showQr || !tokenUrl || !canvasRef.current) return;
+    if (!isActive || !tokenUrl || !canvasRef.current) return;
     QRCode.toCanvas(
       canvasRef.current,
       tokenUrl,
@@ -325,7 +337,7 @@ function DownloadLinkItem({
         if (err) toast.error("二维码生成失败");
       },
     );
-  }, [showQr, tokenUrl]);
+  }, [isActive, tokenUrl]);
 
   // 复制提取码
   const handleCopyPassword = () => {
@@ -355,7 +367,7 @@ function DownloadLinkItem({
           onClick={handleGenerateQr}
           disabled={generateToken.isPending}
           className={`w-9 h-9 rounded-md flex items-center justify-center border transition-all flex-shrink-0 ${
-            showQr
+            isActive
               ? "bg-violet-500 text-white border-violet-500"
               : "bg-background text-muted-foreground border-border hover:bg-violet-500 hover:text-white hover:border-violet-500"
           }`}
@@ -384,7 +396,7 @@ function DownloadLinkItem({
       )}
 
       {/* 二维码展示区（展开时） */}
-      {showQr && tokenUrl && !isMobile && (
+      {isActive && tokenUrl && !isMobile && (
         <div className="mt-3 pt-3 border-t border-dashed border-border/40 flex flex-col items-center">
           <div className="p-2 bg-white rounded-lg border border-border/30">
             <canvas ref={canvasRef} />
