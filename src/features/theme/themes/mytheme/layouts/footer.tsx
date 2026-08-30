@@ -96,7 +96,10 @@ export function Footer() {
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="overflow-hidden rounded-xl border border-border/40 bg-background p-1 shadow-sm">
             <img
-              src="/images/qq-group-qr.svg"
+              src={
+                siteConfig.theme.mytheme.footerQrImage ||
+                "/images/qq-group-qr.svg"
+              }
               alt="QQ群二维码"
               className="h-24 w-24 object-contain"
             />

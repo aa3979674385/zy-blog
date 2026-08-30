@@ -370,6 +370,17 @@ export function MythemeHomeTemplateSettings() {
             error={errors.site?.theme?.mytheme?.footerBgDark?.message}
           />
         </div>
+        <div className="mt-5">
+          <AssetUploadField
+            name="site.theme.mytheme.footerQrImage"
+            assetPath="themes/mytheme/footer-qr.png"
+            accept=".png,.webp,.jpg,.jpeg,.svg"
+            label="页脚二维码图片"
+            hint="站点页脚展示的二维码图片（如 QQ 群二维码），上传后自动替换。"
+            placeholder="/images/qq-group-qr.svg"
+            error={errors.site?.theme?.mytheme?.footerQrImage?.message}
+          />
+        </div>
       </div>
 
       {/* 卡片：首页视觉 */}

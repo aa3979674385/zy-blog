@@ -240,6 +240,9 @@ export function resolveSiteConfig(
         copyrightNotice:
           config?.site?.theme?.mytheme?.copyrightNotice ??
           blogConfig.theme.mytheme.copyrightNotice,
+        footerQrImage:
+          config?.site?.theme?.mytheme?.footerQrImage ??
+          blogConfig.theme.mytheme.footerQrImage,
       },
     },
   });

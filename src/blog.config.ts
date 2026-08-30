@@ -49,6 +49,7 @@ export const blogConfig = {
         buttons: [],
       },
       copyrightNotice: "",
+      footerQrImage: "/images/qq-group-qr.svg",
     },
   },
 } as const satisfies SiteConfig;

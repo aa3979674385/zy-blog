@@ -387,6 +387,7 @@ function createMythemeThemeSiteConfigSchema() {
     homeCategoryTabs: z.array(createMythemeHomeCategoryTabSchema()),
     floatingToolbar: createFloatingToolbarSchema(),
     copyrightNotice: z.string().default(""),
+    footerQrImage: createAssetRefSchema(),
   });
 }
 
@@ -404,6 +405,7 @@ function createMythemeThemeSiteConfigInputSchema() {
       .optional(),
     floatingToolbar: createFloatingToolbarInputSchema().optional(),
     copyrightNotice: z.string().optional(),
+    footerQrImage: createAssetRefSchema().optional(),
   });
 }
 
@@ -421,6 +423,7 @@ function createMythemeThemeSiteConfigInputFormSchema(messages: Messages) {
       .optional(),
     floatingToolbar: createFloatingToolbarInputFormSchema(messages).optional(),
     copyrightNotice: z.string().optional(),
+    footerQrImage: createAssetRefFormSchema(messages).optional(),
   });
 }
 
