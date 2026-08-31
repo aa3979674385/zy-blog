@@ -86,6 +86,7 @@ export function MembershipPlanTable({
                 <th className="px-4 py-3 font-medium">说明</th>
                 <th className="px-4 py-3 font-medium">价格</th>
                 <th className="px-4 py-3 font-medium">有效期</th>
+                <th className="px-4 py-3 font-medium">每日下载</th>
                 <th className="px-4 py-3 font-medium">状态</th>
                 <th className="px-4 py-3 font-medium text-right">操作</th>
               </tr>
@@ -105,6 +106,9 @@ export function MembershipPlanTable({
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {plan.durationDays} 天
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground font-mono">
+                    {plan.dailyDownloadLimit ?? 0} 篇
                   </td>
                   <td className="px-4 py-3">
                     <span

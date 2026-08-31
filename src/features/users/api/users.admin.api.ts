@@ -212,7 +212,7 @@ const adjustPointsInputSchema = z.object({
 
 export type AdjustUserPointsPayload = z.infer<typeof adjustPointsInputSchema>;
 
-/** 调整用户双积分（普通积分 points / 会员积分 credits）：在现有余额上增减，结果不允许为负。 */
+/** 调整用户双积分（积分 points / 余额 credits）：在现有余额上增减，结果不允许为负。 */
 export const adjustPointsFn = createServerFn()
   .middleware([requirePermission("user.manage")])
   .inputValidator(adjustPointsInputSchema)

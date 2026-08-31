@@ -15,7 +15,7 @@ export const pointTransaction = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    // 变动的积分类型：points=普通积分，credits=会员积分
+    // 变动的积分类型：points=积分，credits=余额
     type: text("type", { enum: ["points", "credits"] }).notNull(),
     // 变动量（带符号）
     amount: integer("amount").notNull(),

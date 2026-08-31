@@ -16,7 +16,7 @@ export interface ResourceLink {
 /**
  * 文章下载资源（下载框）。
  * - accessType：free=免费，member=会员专享（会员免费看，非会员不可见），paid=收费（需购买/积分兑换）。
- * - priceType：points=普通积分，credits=会员积分（系统为双积分制，资源可指定用哪种积分支付）。
+ * - priceType：points=积分，credits=余额（系统为双积分制，资源可指定用哪种积分支付）。
  * - priceAmount：积分数量（整数）。
  * - memberAccess：会员权益。none=会员同价；free=会员免费（非会员按基础价）；discount=会员按折扣（1=1折…10=不打折）；required=仅会员可购买（非会员不可见）。
  * - memberDiscount：会员折扣系数（1-10），仅当 memberAccess=discount 时生效。

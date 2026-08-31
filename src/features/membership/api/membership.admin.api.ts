@@ -9,6 +9,8 @@ const planInputSchema = z.object({
   // 价格单位：分（客户端把「元」换算后传入）
   priceCents: z.number().int("价格必须为整数分").nonnegative("价格不能为负"),
   durationDays: z.number().int().positive("有效期必须为正整数").default(30),
+  // 每日下载限制（0=不限）
+  dailyDownloadLimit: z.number().int().min(0).default(0),
   // 1=显示，0=隐藏
   visible: z.number().int().min(0).max(1).default(1),
   sortOrder: z.number().int().default(0),
@@ -53,6 +55,7 @@ export const createMembershipPlanFn = createServerFn({ method: "POST" })
       description: data.description ?? null,
       priceCents: data.priceCents,
       durationDays: data.durationDays,
+      dailyDownloadLimit: data.dailyDownloadLimit,
       visible: data.visible,
       sortOrder: data.sortOrder,
     });
@@ -81,6 +84,7 @@ export const updateMembershipPlanFn = createServerFn({ method: "POST" })
       description: data.description ?? null,
       priceCents: data.priceCents,
       durationDays: data.durationDays,
+      dailyDownloadLimit: data.dailyDownloadLimit,
       visible: data.visible,
       sortOrder: data.sortOrder,
     });
@@ -92,6 +96,7 @@ export const updateMembershipPlanFn = createServerFn({ method: "POST" })
       detail: JSON.stringify({
         priceCents: data.priceCents,
         durationDays: data.durationDays,
+        dailyDownloadLimit: data.dailyDownloadLimit,
         visible: data.visible,
       }),
     });

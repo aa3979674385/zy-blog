@@ -3,7 +3,7 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
  * 卡密（兑换码）表。
- * - 一张卡密绑定一组奖励配置（会员时长 / 积分A=普通积分(points) / 积分B=会员积分(credits)），
+ * - 一张卡密绑定一组奖励配置（会员时长 / 积分A=积分(points) / 积分B=余额(credits)），
  *   奖励配置永久绑定卡密，生成后不再变化。
  * - status：unused=未兑换，used=已兑换；单张卡密仅可兑换一次。
  * - 所有奖励字段均可空：空表示该项不发放。
@@ -21,9 +21,9 @@ export const cardKey = sqliteTable(
     batchNote: text("batch_note"),
     // 会员时长（天），可空：空=不赠送会员
     membershipDays: integer("membership_days"),
-    // 积分A数量（普通积分 points），可空：空=不发放
+    // 积分A数量（积分 points），可空：空=不发放
     pointsA: integer("points_a"),
-    // 积分B数量（会员积分 credits），可空：空=不发放
+    // 积分B数量（余额 credits），可空：空=不发放
     pointsB: integer("points_b"),
     status: text("status", { enum: cardKeyStatus })
       .notNull()

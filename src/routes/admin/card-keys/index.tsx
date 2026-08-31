@@ -167,7 +167,7 @@ function CardKeysAdminPage() {
               className="w-full rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-(--fuwari-primary)"
             />
           </Field>
-          <Field label="积分A数量（普通积分）" hint="填写数值发放普通积分；留空不发放">
+          <Field label="积分A数量（积分）" hint="填写数值发放积分；留空不发放">
             <input
               type="number"
               min={1}
@@ -177,7 +177,7 @@ function CardKeysAdminPage() {
               className="w-full rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-(--fuwari-primary)"
             />
           </Field>
-          <Field label="积分B数量（会员积分）" hint="填写数值发放会员积分；留空不发放">
+          <Field label="积分B数量（余额）" hint="填写数值发放余额；留空不发放">
             <input
               type="number"
               min={1}

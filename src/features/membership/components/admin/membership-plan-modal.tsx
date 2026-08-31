@@ -24,6 +24,7 @@ const EMPTY = {
   description: "",
   priceYuan: "",
   durationDays: "30",
+  dailyDownloadLimit: "0",
   visible: 1 as 0 | 1,
 };
 
@@ -40,6 +41,9 @@ const MembershipPlanModalInternal = ({
   const [description, setDescription] = useState(EMPTY.description);
   const [priceYuan, setPriceYuan] = useState(EMPTY.priceYuan);
   const [durationDays, setDurationDays] = useState(EMPTY.durationDays);
+  const [dailyDownloadLimit, setDailyDownloadLimit] = useState(
+    EMPTY.dailyDownloadLimit,
+  );
   const [visible, setVisible] = useState<0 | 1>(EMPTY.visible);
 
   useEffect(() => {
@@ -49,12 +53,14 @@ const MembershipPlanModalInternal = ({
       setDescription(plan.description ?? "");
       setPriceYuan((plan.priceCents / 100).toString());
       setDurationDays(String(plan.durationDays));
+      setDailyDownloadLimit(String(plan.dailyDownloadLimit ?? 0));
       setVisible(plan.visible === 1 ? 1 : 0);
     } else {
       setName(EMPTY.name);
       setDescription(EMPTY.description);
       setPriceYuan(EMPTY.priceYuan);
       setDurationDays(EMPTY.durationDays);
+      setDailyDownloadLimit(EMPTY.dailyDownloadLimit);
       setVisible(EMPTY.visible);
     }
   }, [isOpen, plan]);
@@ -83,6 +89,11 @@ const MembershipPlanModalInternal = ({
       toast.error("请输入有效的有效期（天）");
       return;
     }
+    const dlLimit = Math.round(Number(dailyDownloadLimit));
+    if (!Number.isFinite(dlLimit) || dlLimit < 0) {
+      toast.error("请输入有效的每日下载限制");
+      return;
+    }
     const priceCents = Math.round(yuan * 100);
 
     try {
@@ -94,6 +105,7 @@ const MembershipPlanModalInternal = ({
             description: description.trim() || null,
             priceCents,
             durationDays: days,
+            dailyDownloadLimit: dlLimit,
             visible,
           },
         });
@@ -105,6 +117,7 @@ const MembershipPlanModalInternal = ({
             description: description.trim() || null,
             priceCents,
             durationDays: days,
+            dailyDownloadLimit: dlLimit,
             visible,
           },
         });
@@ -190,6 +203,23 @@ const MembershipPlanModalInternal = ({
                 placeholder="30"
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+              每日下载限制（篇）
+            </label>
+            <Input
+              type="number"
+              min={0}
+              step="1"
+              value={dailyDownloadLimit}
+              onChange={(e) => setDailyDownloadLimit(e.target.value)}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              该套餐会员每日最多可下载的不同文章篇数，0 表示不限制
+            </p>
           </div>
 
           <div className="flex items-center justify-between border border-border/30 px-4 py-3">

@@ -43,10 +43,6 @@ export function resolveSystemConfig(
     ...DEFAULT_CONFIG,
     ...config,
     points: {
-      pointsName:
-        config?.points?.pointsName ?? DEFAULT_CONFIG.points!.pointsName,
-      creditsName:
-        config?.points?.creditsName ?? DEFAULT_CONFIG.points!.creditsName,
       pointsPerYuan:
         config?.points?.pointsPerYuan ?? DEFAULT_CONFIG.points!.pointsPerYuan,
       paymentEnabled:
@@ -56,9 +52,6 @@ export function resolveSystemConfig(
       normalUserDaily:
         config?.downloadLimit?.normalUserDaily ??
         DEFAULT_CONFIG.downloadLimit!.normalUserDaily,
-      memberDaily:
-        config?.downloadLimit?.memberDaily ??
-        DEFAULT_CONFIG.downloadLimit!.memberDaily,
     },
     email: resolveEmailConfig(config),
     notification: {
@@ -342,8 +335,6 @@ export async function updateSystemConfig(
 export async function updatePointsConfig(
   context: DbContext & { executionCtx: ExecutionContext },
   input: {
-    pointsName: string;
-    creditsName: string;
     pointsPerYuan?: number;
     paymentEnabled?: boolean;
   },
@@ -353,9 +344,6 @@ export async function updatePointsConfig(
   const next: SystemConfig = {
     ...resolved,
     points: {
-      pointsName: input.pointsName?.trim() || DEFAULT_CONFIG.points!.pointsName,
-      creditsName:
-        input.creditsName?.trim() || DEFAULT_CONFIG.points!.creditsName,
       pointsPerYuan:
         input.pointsPerYuan && input.pointsPerYuan > 0
           ? Math.floor(input.pointsPerYuan)

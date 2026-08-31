@@ -340,11 +340,11 @@ export async function getCheckInStatus(
   };
 }
 
-/** 每日签到发放的普通积分数（后续可做成可配置） */
+/** 每日签到发放的积分数（后续可做成可配置） */
 export const CHECKIN_REWARD = 1;
 
 /**
- * 执行签到：校验「今天还没签过」→ 发放普通积分 → 更新连续天数 → 记流水。
+ * 执行签到：校验「今天还没签过」→ 发放积分 → 更新连续天数 → 记流水。
  * 重复签到会抛 ALREADY_CHECKED_IN 错误（由上层转成友好提示）。
  *
  * 注意：Cloudflare D1 的交互式事务 db.transaction() 在当前运行时会

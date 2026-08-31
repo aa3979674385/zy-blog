@@ -13,7 +13,6 @@ import {
 } from "@/features/post-resources/queries";
 import { uploadResourceAttachmentFn } from "@/features/post-resources/api/post-resources.admin.api";
 import { parseShareLink } from "@/features/post-resources/lib/share-parse";
-import { usePointConfig } from "@/features/config/queries";
 import type { PostResource } from "@/lib/db/schema";
 
 const LINK_TYPES = [
@@ -87,7 +86,6 @@ const PostResourceModalInternal = ({
   // 媒体库选择：pickerForIdx 记录当前要为哪一行选择已上传文件
   const [pickerForIdx, setPickerForIdx] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: pointConfig } = usePointConfig();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -445,15 +443,11 @@ const PostResourceModalInternal = ({
                   }
                   className={selectCls}
                 >
-                  <option value="points">
-                    {pointConfig?.pointsName ?? "普通积分"}
-                  </option>
-                  <option value="credits">
-                    {pointConfig?.creditsName ?? "会员积分"}
-                  </option>
+                  <option value="points">积分</option>
+                  <option value="credits">余额</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  选择该资源用「普通积分」还是「会员积分」结算（双积分体系）。
+                  选择该资源用「积分」还是「余额」结算（双积分体系）。
                 </p>
               </div>
               <div className="space-y-1.5">

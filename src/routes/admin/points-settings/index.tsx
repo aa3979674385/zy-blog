@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Download, Gift, Loader2 } from "lucide-react";
+import { Coins, Gift, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,10 @@ export const Route = createFileRoute("/admin/points-settings/")({
 function PointsSettingsPage() {
   const { data: config, isLoading } = usePointConfig();
   const { data: sysConfig } = useQuery(systemConfigQuery);
-  const [pointsName, setPointsName] = useState("");
-  const [creditsName, setCreditsName] = useState("");
   const [pointsPerYuan, setPointsPerYuan] = useState("10");
   const [paymentEnabled, setPaymentEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // 每日下载限制（普通用户 / 会员用户）
-  const [normalDaily, setNormalDaily] = useState("0");
-  const [memberDaily, setMemberDaily] = useState("0");
-  const [savingDl, setSavingDl] = useState(false);
   const [cardKeyUrl, setCardKeyUrl] = useState("");
   const [savingCardKey, setSavingCardKey] = useState(false);
 
@@ -41,19 +35,10 @@ function PointsSettingsPage() {
 
   useEffect(() => {
     if (config) {
-      setPointsName(config.pointsName);
-      setCreditsName(config.creditsName);
       setPointsPerYuan(String(config.pointsPerYuan ?? 10));
       setPaymentEnabled(config.paymentEnabled ?? false);
     }
   }, [config]);
-
-  useEffect(() => {
-    if (sysConfig?.downloadLimit) {
-      setNormalDaily(String(sysConfig.downloadLimit.normalUserDaily ?? 0));
-      setMemberDaily(String(sysConfig.downloadLimit.memberDaily ?? 0));
-    }
-  }, [sysConfig]);
 
   useEffect(() => {
     if (sysConfig?.site) {
@@ -71,34 +56,10 @@ function PointsSettingsPage() {
   const parsedRatio = Number(pointsPerYuan);
   const ratioValid = Number.isFinite(parsedRatio) && parsedRatio > 0;
   const dirty =
-    (pointsName !== config?.pointsName ||
-      creditsName !== config?.creditsName ||
-      Number(config?.pointsPerYuan ?? 10) !== parsedRatio ||
-      (config?.paymentEnabled ?? false) !== paymentEnabled) &&
-    pointsName.trim() !== "" &&
-    creditsName.trim() !== "" &&
-    ratioValid;
-
-  const parsedNormal = Number(normalDaily);
-  const parsedMember = Number(memberDaily);
-  const dlValid =
-    Number.isFinite(parsedNormal) &&
-    parsedNormal >= 0 &&
-    Number.isInteger(parsedNormal) &&
-    Number.isFinite(parsedMember) &&
-    parsedMember >= 0 &&
-    Number.isInteger(parsedMember);
-  const dlDirty =
-    !!sysConfig &&
-    dlValid &&
-    (parsedNormal !== (sysConfig.downloadLimit?.normalUserDaily ?? 0) ||
-      parsedMember !== (sysConfig.downloadLimit?.memberDaily ?? 0));
+    Number(config?.pointsPerYuan ?? 10) !== parsedRatio ||
+    (config?.paymentEnabled ?? false) !== paymentEnabled;
 
   const handleSave = async () => {
-    if (pointsName.trim() === "" || creditsName.trim() === "") {
-      toast.error("名称不能为空");
-      return;
-    }
     if (!ratioValid) {
       toast.error("积分比例必须为正数");
       return;
@@ -107,8 +68,6 @@ function PointsSettingsPage() {
     try {
       await updatePointConfigFn({
         data: {
-          pointsName: pointsName.trim(),
-          creditsName: creditsName.trim(),
           pointsPerYuan: Math.floor(parsedRatio),
           paymentEnabled,
         },
@@ -118,29 +77,6 @@ function PointsSettingsPage() {
       toast.error("保存失败，请稍后重试");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSaveDownloadLimit = async () => {
-    if (!dlValid) {
-      toast.error("请输入非负整数");
-      return;
-    }
-    setSavingDl(true);
-    try {
-      await updateSystemConfigFn({
-        data: {
-          downloadLimit: {
-            normalUserDaily: parsedNormal,
-            memberDaily: parsedMember,
-          },
-        },
-      });
-      toast.success("已保存");
-    } catch {
-      toast.error("保存失败，请稍后重试");
-    } finally {
-      setSavingDl(false);
     }
   };
 
@@ -219,56 +155,6 @@ function PointsSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins size={16} className="opacity-60" />
-            积分名称配置
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            设置两套积分在前台展示的名称。修改后前台会员积分页、后台用户详情页将同步更新。
-          </p>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-              普通积分名称
-            </label>
-            <Input
-              value={pointsName}
-              maxLength={20}
-              onChange={(e) => setPointsName(e.target.value)}
-              placeholder="如：积分 / 金币 / 成长值"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-              会员积分名称
-            </label>
-            <Input
-              value={creditsName}
-              maxLength={20}
-              onChange={(e) => setCreditsName(e.target.value)}
-              placeholder="如：会员积分 / 钻石 / 尊享值"
-            />
-          </div>
-
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            className="h-11 px-8 rounded-none bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 size={14} className="animate-spin mr-2" />
-            ) : null}
-            保存
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coins size={16} className="opacity-60" />
             积分计费与支付
           </CardTitle>
         </CardHeader>
@@ -306,58 +192,14 @@ function PointsSettingsPage() {
               已接入支付网关（开启后，积分不足可折算人民币支付；关闭则积分不足无法购买）
             </span>
           </label>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download size={16} className="opacity-60" />
-            每日下载限制
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            限制每位用户每天可下载的「不同文章」篇数（免费与收费资源均计入，同一天重复下载同一篇文章不计数）。
-            普通用户与会员用户可分别设置；填 0 表示不限制。
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <label className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                普通用户每日下载篇数
-              </label>
-              <Input
-                type="number"
-                min={0}
-                step={1}
-                value={normalDaily}
-                onChange={(e) => setNormalDaily(e.target.value)}
-                placeholder="0 = 不限制"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                会员用户每日下载篇数
-              </label>
-              <Input
-                type="number"
-                min={0}
-                step={1}
-                value={memberDaily}
-                onChange={(e) => setMemberDaily(e.target.value)}
-                placeholder="0 = 不限制"
-              />
-            </div>
-          </div>
 
           <Button
             type="button"
-            onClick={handleSaveDownloadLimit}
-            disabled={!dlDirty || savingDl || !dlValid}
+            onClick={handleSave}
+            disabled={!dirty || saving}
             className="h-11 px-8 rounded-none bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
           >
-            {savingDl ? (
+            {saving ? (
               <Loader2 size={14} className="animate-spin mr-2" />
             ) : null}
             保存
@@ -420,6 +262,7 @@ function PointsSettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

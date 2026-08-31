@@ -11,7 +11,6 @@ import {
   myDailyDownloadQuotaQuery,
 } from "@/features/post-resources/queries";
 import { myPointsQuery } from "@/features/users/queries";
-import { usePointConfig } from "@/features/config/queries";
 import { RewardModule } from "./reward-module";
 import { FreeResourceSection } from "./free-resource-section";
 import { logResourceDownloadFn } from "@/features/post-resources/api/post-resources.public.api";
@@ -96,7 +95,6 @@ export function SidebarDownloadBox({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const { data: myPoints } = useQuery({ ...myPointsQuery(), enabled: isAuthed });
-  const { data: pointConfig } = usePointConfig();
   const { data: quota, refetch: refetchQuota } = useQuery({
     ...myDailyDownloadQuotaQuery,
     enabled: isAuthed,
@@ -194,9 +192,7 @@ export function SidebarDownloadBox({
       <div className="space-y-3">
         {resources.map((r, idx) => {
           const pointName =
-            r.priceType === "credits"
-              ? pointConfig?.creditsName ?? "会员积分"
-              : pointConfig?.pointsName ?? "普通积分";
+            r.priceType === "credits" ? "余额" : "积分";
           const balance =
             r.priceType === "credits" ? myPoints?.credits ?? 0 : myPoints?.points ?? 0;
           // 空标题自动兜底：有标题用标题，无标题按序号「下载资源 1」「下载资源 2」…，再无则回退文章标题

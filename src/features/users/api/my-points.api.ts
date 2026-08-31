@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 import { user } from "@/lib/db/schema";
 
 /**
- * 返回当前登录用户自身的双积分余额（普通积分 points + 会员积分 credits）。
+ * 返回当前登录用户自身的双积分余额（积分 points + 余额 credits）。
  * 仅需要已登录会话；未登录返回 0/0。
  */
 export const getMyPointsFn = createServerFn()
@@ -53,7 +53,7 @@ export const getMyCheckInStatusFn = createServerFn()
     UserService.getCheckInStatus(context, context.session.user.id),
   );
 
-/** 执行每日签到：发放普通积分并记录流水（服务端校验「今日未签」） */
+/** 执行每日签到：发放积分并记录流水（服务端校验「今日未签」） */
 export const checkInFn = createServerFn({ method: "POST" })
   .middleware([
     createRateLimitMiddleware({

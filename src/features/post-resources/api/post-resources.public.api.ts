@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { user } from "@/lib/db/schema";
+import { user, membershipPlan } from "@/lib/db/schema";
 import type { ResourceLink } from "@/lib/db/schema/post-resources.table";
 import { authMiddleware, sessionMiddleware } from "@/lib/middlewares";
 import { getSystemConfig } from "@/features/config/service/config.service";
@@ -20,7 +20,7 @@ export interface PublicResourceView {
   /** 解压码（压缩包密码）。原「说明」字段改造而来。当「收费时隐藏解压码」开启且资源为收费且用户未解锁时，此处为 null（不下发）。 */
   extractCode: string | null;
   accessType: "free" | "member" | "paid";
-  /** 结算用的积分类型：points=普通积分，credits=会员积分 */
+  /** 结算用的积分类型：points=积分，credits=余额 */
   priceType: "points" | "credits";
   access: {
     accessible: boolean;
@@ -208,7 +208,7 @@ export const logResourceDownloadFn = createServerFn({ method: "POST" })
 
 /**
  * 前台：查询当前登录用户今日已下载的「不同文章」篇数 + 上限。
- * 普通用户取 normalUserDaily，会员用户取 memberDaily（来自后台 downloadLimit 配置）。
+ * 普通用户取 normalUserDaily（后台 downloadLimit 配置），会员用户取所属套餐的 dailyDownloadLimit。
  * 用于下载框展示「今日剩余 N 篇」并做前端拦截。unlimited=true 表示后台未设上限。
  */
 export const getMyDailyDownloadQuotaFn = createServerFn()
@@ -221,9 +221,16 @@ export const getMyDailyDownloadQuotaFn = createServerFn()
     });
     const isMember = PostResourcesData.isUserMember(u);
     const cfg = await getSystemConfig(context);
-    const limit = isMember
-      ? cfg.downloadLimit?.memberDaily ?? 0
-      : cfg.downloadLimit?.normalUserDaily ?? 0;
+    let limit: number;
+    if (isMember && u?.membershipPlanId) {
+      const plan = await context.db.query.membershipPlan.findFirst({
+        where: eq(membershipPlan.id, u.membershipPlanId),
+        columns: { dailyDownloadLimit: true },
+      });
+      limit = plan?.dailyDownloadLimit ?? 0;
+    } else {
+      limit = cfg.downloadLimit?.normalUserDaily ?? 0;
+    }
     const { dayStartMs, dayEndMs } = PostResourcesData.getDayWindow();
     const used = await PostResourcesData.countDistinctDailyArticleDownloads(
       context.db,

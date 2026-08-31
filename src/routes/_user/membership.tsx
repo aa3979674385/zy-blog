@@ -34,7 +34,7 @@ import { useMyPermissions } from "@/features/auth/permissions";
 import { useMyMembershipStatus, usePublicMembershipPlans } from "@/features/membership/queries";
 import { useMyPurchaseOrders } from "@/features/post-resources/queries";
 import { useCheckIn, useMyCheckInStatus, useMyPoints } from "@/features/users/queries";
-import { usePointConfig, siteConfigQuery } from "@/features/config/queries";
+import { siteConfigQuery } from "@/features/config/queries";
 import { useFriendLinkSubmitForm } from "@/features/friend-links/hooks/use-friend-link-submit-form";
 import { myFriendLinksQuery } from "@/features/friend-links/queries";
 import { Turnstile, useTurnstile } from "@/components/common/turnstile";
@@ -90,8 +90,8 @@ function formatCents(cents: number): string {
 }
 
 const PRICE_TYPE_LABEL: Record<string, string> = {
-  points: "普通积分",
-  credits: "会员积分",
+  points: "积分",
+  credits: "余额",
   rmb: "人民币",
 };
 
@@ -224,13 +224,13 @@ function OverviewView({
           </div>
         </button>
         <div className="fuwari-card-base rounded-2xl p-6">
-          <div className="text-xs fuwari-text-50">普通积分</div>
+          <div className="text-xs fuwari-text-50">积分</div>
           <div className="mt-2 text-5xl font-serif tabular-nums fuwari-text-90">
             {myPoints?.points ?? 0}
           </div>
         </div>
         <div className="fuwari-card-base rounded-2xl p-6">
-          <div className="text-xs fuwari-text-50">会员积分</div>
+          <div className="text-xs fuwari-text-50">余额</div>
           <div className="mt-2 text-5xl font-serif tabular-nums fuwari-text-90">
             {myPoints?.credits ?? 0}
           </div>
@@ -266,13 +266,11 @@ function CheckinView() {
   const { data: checkIn, isLoading } = useMyCheckInStatus();
   const checkInMutation = useCheckIn();
   const { data: myPoints } = useMyPoints();
-  const { data: pointConfig } = usePointConfig();
-  const pointsName = pointConfig?.pointsName ?? "普通积分";
 
   const handleCheckIn = () => {
     checkInMutation.mutate(undefined, {
       onSuccess: (res) =>
-        toast.success(`签到成功！连续 ${res.streak} 天，获得 ${res.awarded} ${pointsName}`),
+        toast.success(`签到成功！连续 ${res.streak} 天，获得 ${res.awarded} 积分`),
       onError: (e) =>
         toast.error(
           e instanceof Error && e.message.includes("ALREADY")
@@ -307,7 +305,7 @@ function CheckinView() {
           </Button>
         </div>
         <div className="mt-4 rounded-xl border border-border/40 bg-muted/10 p-4 text-xs fuwari-text-50">
-          当前 {pointsName}：
+          当前积分：
           <span className="font-mono font-medium fuwari-text-90">
             {myPoints?.points ?? 0}
           </span>
@@ -321,18 +319,14 @@ function CheckinView() {
 
 function PointsView({ onRecharge }: { onRecharge: () => void }) {
   const { data: myPoints, isLoading } = useMyPoints();
-  const { data: pointConfig } = usePointConfig();
   const { data: orders, isLoading: ordersLoading } = useMyPurchaseOrders(0, 50);
-
-  const pointsName = pointConfig?.pointsName ?? "普通积分";
-  const creditsName = pointConfig?.creditsName ?? "会员积分";
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <Panel>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold fuwari-text-90">{pointsName}</h2>
+            <h2 className="text-lg font-bold fuwari-text-90">积分</h2>
             <button
               type="button"
               onClick={onRecharge}
@@ -349,7 +343,7 @@ function PointsView({ onRecharge }: { onRecharge: () => void }) {
             可用于日常互动、内容兑换等通用场景
           </p>
         </Panel>
-        <Panel title={creditsName}>
+        <Panel title="余额">
           <div className="text-5xl font-serif tabular-nums fuwari-text-90">
             {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : myPoints?.credits ?? 0}
           </div>
@@ -543,13 +537,13 @@ function PlansView() {
               {result.pointsA ? (
                 <li className="flex items-center gap-2">
                   <Gift size={16} className="fuwari-text-50" />
-                  普通积分 +{result.pointsA}
+                  积分 +{result.pointsA}
                 </li>
               ) : null}
               {result.pointsB ? (
                 <li className="flex items-center gap-2">
                   <Gift size={16} className="fuwari-text-50" />
-                  会员积分 +{result.pointsB}
+                  余额 +{result.pointsB}
                 </li>
               ) : null}
               {!result.membershipDays && !result.pointsA && !result.pointsB ? (

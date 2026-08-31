@@ -19,7 +19,7 @@ export const user = sqliteTable("user", {
   role: text("role"),
   // 管理员权限（JSON 数组字符串；null/未设置 = 超级管理员，拥有全部权限）
   permissions: text("permissions"),
-  // 双积分（两套独立）：points=普通积分，credits=会员积分；默认 0，不允许为负
+  // 双积分（两套独立）：points=积分，credits=余额；默认 0，不允许为负
   points: integer("points").default(0).notNull(),
   credits: integer("credits").default(0).notNull(),
   // 签到：上次签到时间（UTC ms）；null 表示从未签到

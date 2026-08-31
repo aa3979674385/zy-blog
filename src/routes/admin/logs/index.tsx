@@ -22,7 +22,6 @@ import {
 } from "@/features/admin-log/queries";
 import { useMyPermissions } from "@/features/auth/permissions";
 import { useSystemSetting } from "@/features/config/hooks/use-system-setting";
-import { usePointConfig } from "@/features/config/queries";
 import {
   useClearPurchaseOrders,
   useClearResourceDownloads,
@@ -393,7 +392,6 @@ const POINT_SOURCE_LABELS: Record<string, string> = {
 function PointsPanel() {
   const { ptype, psource, puserId, porderno, page } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { data: pointConfig } = usePointConfig();
 
   const [userIdInput, setUserIdInput] = useState(puserId ?? "");
   const [orderNoInput, setOrderNoInput] = useState(porderno ?? "");
@@ -457,9 +455,7 @@ function PointsPanel() {
   };
 
   const typeName = (t: string) =>
-    t === "points"
-      ? (pointConfig?.pointsName ?? "普通积分")
-      : (pointConfig?.creditsName ?? "会员积分");
+    t === "points" ? "积分" : "余额";
 
   return (
     <div className="space-y-6">
@@ -479,8 +475,8 @@ function PointsPanel() {
           }
           options={[
             { value: "", label: "全部" },
-            { value: "points", label: "普通积分" },
-            { value: "credits", label: "会员积分" },
+            { value: "points", label: "积分" },
+            { value: "credits", label: "余额" },
           ]}
         />
         <FilterSelect
@@ -717,7 +713,6 @@ function downloadCsv(filename: string, csv: string) {
 function PurchasePanel() {
   const { borderno, buserId, bkeyword, page } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { data: pointConfig } = usePointConfig();
 
   const [orderNoInput, setOrderNoInput] = useState(borderno ?? "");
   const [userIdInput, setUserIdInput] = useState(buserId ?? "");
@@ -798,9 +793,9 @@ function PurchasePanel() {
   };
 
   const typeName = (t: string | null | undefined) => {
-    if (t === "credits") return pointConfig?.creditsName ?? "会员积分";
+    if (t === "credits") return "余额";
     if (t === "rmb") return "人民币";
-    if (t === "points") return pointConfig?.pointsName ?? "普通积分";
+    if (t === "points") return "积分";
     return "—";
   };
 

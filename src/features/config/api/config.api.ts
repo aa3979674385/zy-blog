@@ -11,26 +11,22 @@ export const getSystemConfigFn = createServerFn()
   .middleware([requirePermission("config.manage")])
   .handler(({ context }) => ConfigService.getSystemConfig(context));
 
-/** 公开读取双积分名称 + 资源计费配置（任何已登录用户均可调用，仅返回展示用配置，不含敏感信息） */
+/** 公开读取资源计费配置（任何已登录用户均可调用，仅返回展示用配置，不含敏感信息） */
 export const getPointConfigFn = createServerFn()
   .middleware([dbMiddleware])
   .handler(async ({ context }) => {
     const cfg = await ConfigService.getSystemConfig(context);
     return {
-      pointsName: cfg.points?.pointsName ?? "普通积分",
-      creditsName: cfg.points?.creditsName ?? "会员积分",
       pointsPerYuan: cfg.points?.pointsPerYuan ?? 10,
       paymentEnabled: cfg.points?.paymentEnabled ?? false,
     };
   });
 
-/** 更新双积分名称 + 资源计费配置（仅 config.manage 权限） */
+/** 更新资源计费配置（仅 config.manage 权限） */
 export const updatePointConfigFn = createServerFn({ method: "POST" })
   .middleware([requirePermission("config.manage")])
   .inputValidator(
     z.object({
-      pointsName: z.string().min(1).max(20),
-      creditsName: z.string().min(1).max(20),
       pointsPerYuan: z.number().int().positive().optional(),
       paymentEnabled: z.boolean().optional(),
     }),

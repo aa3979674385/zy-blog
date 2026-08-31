@@ -11,6 +11,7 @@ import {
   postResourceDownload,
   postResourceOrder,
   user,
+  membershipPlan,
 } from "@/lib/db/schema";
 import type { ResourceLink } from "@/lib/db/schema/post-resources.table";
 
@@ -37,7 +38,7 @@ export interface ResourceInput {
   hideCodeWhenPaid?: boolean;
   links: ResourceLink[];
   accessType: "free" | "member" | "paid";
-  /** 结算用的积分类型：points=普通积分，credits=会员积分（双积分制） */
+  /** 结算用的积分类型：points=积分，credits=余额（双积分制） */
   priceType: "points" | "credits";
   /** 积分整数（价格） */
   priceAmount: number;
@@ -326,9 +327,10 @@ export async function countDistinctDailyArticleDownloads(
 
 /**
  * 记录一次附件下载，并在写库前做「每日下载配额」校验：
- * - 普通用户取 normalUserDaily，会员用户取 memberDaily（来自后台 downloadLimit 配置）；
+ * - 普通用户取 downloadLimit.normalUserDaily（来自后台配置）；
+ * - 会员用户取其所持套餐的 dailyDownloadLimit（每个套餐独立设置）；
  * - 上限为 0 视为不限；
- * - 超过当日「不同文章」下载上限则抛错，由调用方（本地附件 serverFn / 外链中转路由）捕获处理。
+ * - 超过当日「不同文章」下载上限则抛错。
  */
 export async function logResourceDownload(
   db: DB,
@@ -339,13 +341,22 @@ export async function logResourceDownload(
     columns: { membershipPlanId: true, membershipExpiresAt: true },
   });
   const isMember = isUserMember(u);
-  const raw = await ConfigRepo.getSystemConfig(db);
-  const dl = raw?.downloadLimit ??
-    DEFAULT_CONFIG.downloadLimit ?? {
-      normalUserDaily: 0,
-      memberDaily: 0,
-    };
-  const limit = isMember ? dl.memberDaily : dl.normalUserDaily;
+
+  let limit: number;
+  if (isMember && u?.membershipPlanId) {
+    // 会员：查套餐的 dailyDownloadLimit
+    const plan = await db
+      .select({ dailyDownloadLimit: membershipPlan.dailyDownloadLimit })
+      .from(membershipPlan)
+      .where(eq(membershipPlan.id, u.membershipPlanId))
+      .limit(1);
+    limit = plan[0]?.dailyDownloadLimit ?? 0;
+  } else {
+    // 非会员：查后台 downloadLimit.normalUserDaily
+    const raw = await ConfigRepo.getSystemConfig(db);
+    limit = raw?.downloadLimit?.normalUserDaily ??
+      DEFAULT_CONFIG.downloadLimit!.normalUserDaily;
+  }
 
   if (limit > 0) {
     const { dayStartMs, dayEndMs } = getDayWindow();
@@ -697,7 +708,7 @@ export async function unlockResource(
     return { status: "unlocked" };
   }
 
-  // 校验积分余额（按资源指定的积分类型：普通积分 / 会员积分）
+  // 校验积分余额（按资源指定的积分类型：积分 / 余额）
   const pointField = resource.priceType; // "points" | "credits"
   const balanceCol = pointField === "credits" ? user.credits : user.points;
   const rows = await db

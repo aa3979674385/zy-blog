@@ -34,7 +34,6 @@ import {
 } from "@/features/users/queries";
 import { useMembershipPlanOptions } from "@/features/membership/queries";
 import { isUserMember } from "@/features/post-resources/data/post-resources.data";
-import { usePointConfig } from "@/features/config/queries";
 import {
   BanDialog,
   type BanDialogValue,
@@ -113,7 +112,6 @@ function UserDetailPage() {
   const deleteUser = useDeleteUser();
   const resetPassword = useResetUserPassword();
   const adjustPoints = useAdjustUserPoints();
-  const { data: pointConfig } = usePointConfig();
   const { data: membershipPlans = [] } = useMembershipPlanOptions();
   const setMembership = useSetUserMembership();
   const navigate = useNavigate();
@@ -146,7 +144,7 @@ function UserDetailPage() {
         reason: s.reason || null,
       });
       toast.success(
-        `${field === "points" ? pointConfig?.pointsName ?? "普通积分" : pointConfig?.creditsName ?? "会员积分"}已${s.mode === "add" ? "添加" : "扣除"} ${amount}`,
+        `${field === "points" ? "积分" : "余额"}已${s.mode === "add" ? "添加" : "扣除"} ${amount}`,
       );
       setPtState((prev) => ({
         ...prev,
@@ -387,12 +385,12 @@ function UserDetailPage() {
             <InfoRow label="最后登录 IP" value={user.lastLoginIp ?? "—"} mono />
             <InfoRow label="更新时间" value={formatDate(user.updatedAt)} />
             <InfoRow
-              label={pointConfig?.pointsName ?? "普通积分"}
+              label="积分"
               value={String(user.points ?? 0)}
               mono
             />
             <InfoRow
-              label={pointConfig?.creditsName ?? "会员积分"}
+              label="余额"
               value={String(user.credits ?? 0)}
               mono
             />
@@ -662,7 +660,7 @@ function UserDetailPage() {
             </Card>
           )}
 
-          {/* 积分管理（双积分：普通积分 / 会员积分） */}
+          {/* 积分管理（双积分：积分 / 余额） */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -676,8 +674,8 @@ function UserDetailPage() {
             <CardContent className="space-y-6">
               {(
                 [
-                  { key: "points", label: pointConfig?.pointsName ?? "普通积分", desc: "可用于日常互动、内容兑换等通用场景" },
-                  { key: "credits", label: pointConfig?.creditsName ?? "会员积分", desc: "会员专属积分，可用于会员权益与增值服务" },
+                  { key: "points", label: "积分", desc: "可用于日常互动、内容兑换等通用场景" },
+                  { key: "credits", label: "余额", desc: "会员专属积分，可用于会员权益与增值服务" },
                 ] as const
               ).map((f) => {
                 const s = ptState[f.key];

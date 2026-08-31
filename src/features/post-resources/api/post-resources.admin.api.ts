@@ -28,7 +28,7 @@ const resourceInputSchema = z.object({
   hideCodeWhenPaid: z.boolean().default(false),
   links: z.array(linkSchema).min(1, "至少添加一个网盘链接").max(20),
   accessType: z.enum(["free", "member", "paid"]).default("free"),
-  // 资源以「积分」计价（系统无人民币充值，人民币由积分按比例折算）；可选普通积分或会员积分
+  // 资源以「积分」计价（系统无人民币充值，人民币由积分按比例折算）；可选积分或余额
   priceType: z.enum(["points", "credits"]).default("points"),
   priceAmount: z
     .number()

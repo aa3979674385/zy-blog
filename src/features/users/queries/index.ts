@@ -118,7 +118,7 @@ export function useSetUserMembership() {
   });
 }
 
-/** 当前登录用户的双积分余额（普通积分 points + 会员积分 credits） */
+/** 当前登录用户的双积分余额（积分 points + 余额 credits） */
 export function myPointsQuery() {
   return queryOptions({
     queryKey: ["myPoints"],

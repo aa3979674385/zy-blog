@@ -51,22 +51,19 @@ export const SystemConfigSchema = z.object({
       requireEmailVerification: z.boolean().default(false),
     })
     .optional(),
-  // 双积分名称 + 资源计费（前台展示/换算用，可后台配置）
+  // 资源计费配置（积分换算 / 支付开关）
   points: z
     .object({
-      pointsName: z.string().max(20).default("普通积分"),
-      creditsName: z.string().max(20).default("会员积分"),
       // 多少积分 = 1 元（用于「积分不足时自动折算成人民币」）
       pointsPerYuan: z.number().int().positive().default(10),
       // 是否已接入支付网关（接入后，积分不足可自动折算为人民币并调起支付）
       paymentEnabled: z.boolean().default(false),
     })
     .optional(),
-  // 每日下载限制：普通用户 / 会员用户分别限制每天可下载的「不同文章」篇数（免费/收费均计入）；0 = 不限
+  // 每日下载限制：普通用户每日可下载的「不同文章」篇数（会员按套餐独立限制）；0 = 不限
   downloadLimit: z
     .object({
       normalUserDaily: z.number().int().min(0).default(0),
-      memberDaily: z.number().int().min(0).default(0),
     })
     .optional(),
   // 免费资源获取：全局总开关 + 每日免费获取次数（按自然日 0 点重置）
@@ -216,8 +213,8 @@ export const DEFAULT_CONFIG: SystemConfig = {
   },
   site: blogConfig satisfies SiteConfigInput,
   auth: { methods: "email", requireEmailVerification: false },
-  points: { pointsName: "普通积分", creditsName: "会员积分", pointsPerYuan: 10, paymentEnabled: false },
-  downloadLimit: { normalUserDaily: 0, memberDaily: 0 },
+  points: { pointsPerYuan: 10, paymentEnabled: false },
+  downloadLimit: { normalUserDaily: 0 },
   freeResource: { enabled: true, dailyLimit: 3 },
   navMenu: [DEFAULT_HOME_NAV_ITEM],
   records: {

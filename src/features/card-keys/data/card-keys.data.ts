@@ -281,11 +281,11 @@ export async function redeemCardKey(
   }
 
   if (ck.pointsA && ck.pointsA > 0) {
-    await creditPoints(db, input.userId, "points", ck.pointsA, "卡密兑换：赠送积分A（普通积分）");
+    await creditPoints(db, input.userId, "points", ck.pointsA, "卡密兑换：赠送积分A（积分）");
     result.pointsA = ck.pointsA;
   }
   if (ck.pointsB && ck.pointsB > 0) {
-    await creditPoints(db, input.userId, "credits", ck.pointsB, "卡密兑换：赠送积分B（会员积分）");
+    await creditPoints(db, input.userId, "credits", ck.pointsB, "卡密兑换：赠送积分B（余额）");
     result.pointsB = ck.pointsB;
   }
 

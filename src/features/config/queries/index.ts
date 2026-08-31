@@ -37,7 +37,7 @@ export const pointConfigQuery = queryOptions({
   queryFn: () => getPointConfigFn(),
 });
 
-/** 读取双积分显示名称（普通积分 / 会员积分），前台后台通用 */
+/** 读取积分计费配置，前台后台通用 */
 export function usePointConfig() {
   return useQuery(pointConfigQuery);
 }

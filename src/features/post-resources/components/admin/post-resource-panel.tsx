@@ -8,7 +8,6 @@ import {
   useDeletePostResource,
   usePostResources,
 } from "@/features/post-resources/queries";
-import { usePointConfig } from "@/features/config/queries";
 import type { PostResource } from "@/lib/db/schema";
 
 function accessBadge(
@@ -37,10 +36,9 @@ export function PostResourcePanel({
 }) {
   const { data: resources, isLoading } = usePostResources(postId);
   const remove = useDeletePostResource();
-  const { data: pointConfig } = usePointConfig();
   const pointNames = {
-    points: pointConfig?.pointsName ?? "普通积分",
-    credits: pointConfig?.creditsName ?? "会员积分",
+    points: "积分",
+    credits: "余额",
   };
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PostResource | null>(null);
