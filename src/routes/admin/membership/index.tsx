@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
