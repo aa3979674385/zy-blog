@@ -94,24 +94,32 @@ import {
  * 嵌入权限数据会被 CDN 串给其他访客，属越权面，见 $slug.tsx loader 注释）。
  *
  * 缓存策略（用户设计意图）：
- * - 权限确认结果只缓存在【当前浏览器 localStorage】——不进 CDN、不进 KV；
- * - 24 小时内再次打开同一详情页：直接读本地缓存，不发请求（不查库）；
- * - 超过 24 小时：清除缓存，重新实时查询（带 session，按当前登录者身份计算）。
+ * - 权限结果只缓存在【当前浏览器 localStorage】——不进 CDN、不进 KV；
+ * - 24 小时内同一篇文章再打开：直接读本地缓存，不发请求（不查库）；
+ * - 超过 24 小时：清除缓存，重新实时查询（带 session，按当前登录者身份计算）；
+ * - 身份隔离：非会员/会员各自独立缓存 key，避免「开通会员后仍命中旧缓存」。
  */
 export function publicPostResourcesQuery(postId: number) {
   return queryOptions({
     queryKey: ["publicPostResources", postId] as const,
     queryFn: async ({ signal }) => {
-      // 1) 本机缓存命中（24h 内）→ 直接返回，不发请求
+      // 1) 尝试读缓存：先读 member 缓存，再读 guest 缓存。
+      //    这样当用户从普通用户变成会员时，guest 缓存不会干扰，
+      //    会员身份优先命中 member 缓存；都没命中就走实时查询。
       if (typeof window !== "undefined") {
-        const cached = readDlLocalCache(postId);
-        if (cached) return cached;
+        const cachedMember = readDlLocalCache(postId, true);
+        if (cachedMember) return cachedMember;
+        const cachedGuest = readDlLocalCache(postId, false);
+        if (cachedGuest) return cachedGuest;
       }
+
       // 2) 未命中 / 已过期 → 实时查询（带 session，按当前登录者权限计算）
       const data = await listPublicPostResourcesFn({ data: { postId }, signal });
-      // 3) 写回本机缓存（仅当有资源时；无资源没必要缓存）
+
+      // 3) 写回本机缓存（以接口返回的 isMember 为准，写入对应身份 key）
       if (typeof window !== "undefined" && data.length > 0) {
-        writeDlLocalCache(postId, data);
+        const isMember = data[0]?.isMember ?? false;
+        writeDlLocalCache(postId, isMember, data);
       }
       return data;
     },
