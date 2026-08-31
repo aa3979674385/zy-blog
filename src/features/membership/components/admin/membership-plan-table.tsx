@@ -1,7 +1,8 @@
-import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import {
   useDeleteMembershipPlan,
@@ -13,6 +14,11 @@ import type { MembershipPlan } from "@/lib/db/schema";
 interface MembershipPlanTableProps {
   onEdit: (plan: MembershipPlan) => void;
   onAdd: () => void;
+  normalDaily: string;
+  onNormalDailyChange: (val: string) => void;
+  onSaveNormalDaily: () => void;
+  savingNormalDaily: boolean;
+  canSaveNormalDaily: boolean;
 }
 
 function formatPrice(cents: number): string {
@@ -22,6 +28,11 @@ function formatPrice(cents: number): string {
 export function MembershipPlanTable({
   onEdit,
   onAdd,
+  normalDaily,
+  onNormalDailyChange,
+  onSaveNormalDaily,
+  savingNormalDaily,
+  canSaveNormalDaily,
 }: MembershipPlanTableProps) {
   const { data: plans, isLoading } = useMembershipPlans();
   const setVisible = useSetMembershipPlanVisible();
@@ -62,7 +73,34 @@ export function MembershipPlanTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-foreground whitespace-nowrap">
+            普通会员每日下载限制
+          </label>
+          <Input
+            type="number"
+            min={0}
+            step={1}
+            value={normalDaily}
+            onChange={(e) => onNormalDailyChange(e.target.value)}
+            className="w-20 h-9 rounded-none"
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSaveNormalDaily}
+            disabled={!canSaveNormalDaily || savingNormalDaily}
+            className="h-9 rounded-none bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 text-[11px] font-mono uppercase tracking-widest px-3"
+          >
+            {savingNormalDaily ? (
+              <Loader2 size={12} className="animate-spin mr-1" />
+            ) : (
+              <Save size={12} className="mr-1" />
+            )}
+            保存
+          </Button>
+        </div>
         <Button
           onClick={onAdd}
           className="rounded-none bg-foreground text-background hover:bg-foreground/90 font-mono text-[10px] uppercase tracking-widest h-9 px-4"
