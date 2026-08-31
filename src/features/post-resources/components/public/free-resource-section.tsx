@@ -195,6 +195,16 @@ function DownloadDialog({
 }) {
   // 当前展开二维码的链接 idx，同时只展开一个
   const [activeQrIdx, setActiveQrIdx] = useState<number | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const handleCopyExtractCode = () => {
+    if (!data.extractCode) return;
+    navigator.clipboard.writeText(data.extractCode).then(() => {
+      setCopiedCode(true);
+      toast.success(`已复制解压密码：${data.extractCode}`);
+      setTimeout(() => setCopiedCode(false), 2000);
+    });
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -247,9 +257,14 @@ function DownloadDialog({
                 <Key size={12} />
                 <span>解压密码</span>
               </div>
-              <div className="font-mono text-sm font-semibold tracking-wider text-foreground bg-background rounded border border-dashed border-amber-300 px-3 py-1.5">
+              <button
+                type="button"
+                onClick={handleCopyExtractCode}
+                className="w-full font-mono text-sm font-semibold tracking-wider text-foreground bg-background rounded border border-dashed border-amber-300 px-3 py-1.5 hover:bg-amber-100 transition-all flex items-center justify-center gap-1.5"
+              >
+                {copiedCode ? <Check size={12} /> : <Copy size={12} />}
                 {data.extractCode}
-              </div>
+              </button>
             </div>
           )}
 
@@ -257,7 +272,7 @@ function DownloadDialog({
           <div className="rounded-lg bg-muted/40 px-3 py-2.5 flex items-start gap-2">
             <span className="text-xs text-muted-foreground mt-0.5">💡</span>
             <span className="text-xs text-muted-foreground">
-              点击二维码按钮扫码下载，提取码点击即复制。二维码有效期 30 分钟。
+              点击二维码按钮扫码下载，提取码和解压密码点击即复制。二维码有效期 30 分钟。
             </span>
           </div>
         </div>
